@@ -540,6 +540,9 @@ DEF epuck0 DifferentialWheels {
       type "infra-red"
       channel 1
     }
+    DEF compass Compass {
+      name "compass2"
+    }
     DEF EPUCK_LEFT_WHEEL Solid {
       translation -0.026 0.02 0
       rotation 1 0 0 -3.19537
@@ -2176,6 +2179,9 @@ DEF epuck1 DifferentialWheels {
       type "infra-red"
       channel 1
     }
+    DEF compass Compass {
+      name "compass2"
+    }
     DEF EPUCK_LEFT_WHEEL Solid {
       translation -0.026 0.02 0
       rotation 1 0 0 0.170874
@@ -3799,6 +3805,9 @@ DEF epuck2 DifferentialWheels {
       name "emitter2"
       type "infra-red"
       channel 1
+    }
+    DEF compass Compass {
+      name "compass2"
     }
     DEF EPUCK_LEFT_WHEEL Solid {
       translation -0.026 0.02 0
@@ -5424,6 +5433,9 @@ DEF epuck3 DifferentialWheels {
       type "infra-red"
       channel 1
     }
+    DEF compass Compass {
+      name "compass2"
+    }
     DEF EPUCK_LEFT_WHEEL Solid {
       translation -0.026 0.02 0
       rotation 1 0 0 -1.06957
@@ -7047,6 +7059,9 @@ DEF epuck4 DifferentialWheels {
       name "emitter2"
       type "infra-red"
       channel 1
+    }
+    DEF compass Compass {
+      name "compass2"
     }
     DEF EPUCK_LEFT_WHEEL Solid {
       translation -0.026 0.02 0
