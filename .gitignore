@@ -30,3 +30,7 @@
 
 # Debug files
 *.dSYM/
+
+#webots useless files
+*.wbproj
+*.d
