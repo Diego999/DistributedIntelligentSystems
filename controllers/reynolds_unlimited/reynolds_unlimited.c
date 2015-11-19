@@ -1,14 +1,3 @@
-/*****************************************************************************/
-/* File:         raynolds2.c                                                 */
-/* Version:      2.0                                                         */
-/* Date:         06-Oct-15                                                   */
-/* Description:  Reynolds flocking with relative positions		     */
-/*                                                                           */
-/* Author: 	 06-Oct-15 by Ali Marjovi				     */
-/* Last revision:12-Oct-15 by Florian Maushart				     */
-/*****************************************************************************/
-
-
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -44,8 +33,6 @@
 
 #define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
 
-float migr[2] = {2, 0};	        // Migration vector
-
 int e_puck_matrix[16] = {17,29,34,10,8,-38,-56,-76,-72,-58,-36,8,10,36,28,18}; // for obstacle avoidance
 
 WbDeviceTag ds[NB_SENSORS];	// Handle for the infrared distance sensors
@@ -61,7 +48,9 @@ float prev_my_position[3];  		// X, Z, Theta of the current robot in the previou
 float speed[FLOCK_SIZE][2];		// Speeds calculated with Reynold's rules
 float relative_speed[FLOCK_SIZE][2];	// Speeds calculated with Reynold's rules
 int initialized[FLOCK_SIZE];		// != 0 if initial positions have been received
+float migr[2] = {0,-50};	        // Migration vector
 char* robot_name; 
+
 
 /*
  * Reset the robot's devices and get its ID
@@ -84,18 +73,20 @@ static void reset()
 
 	for(i=0;i<NB_SENSORS;i++)
     	wb_distance_sensor_enable(ds[i],64);
-	
+
 	wb_receiver_enable(receiver2,64);
 
 	//Reading the robot's name. Pay attention to name specification when adding robots to the simulation!
 	sscanf(robot_name,"epuck%d",&robot_id_u); // read robot id from the robot's name
 	robot_id = robot_id_u%FLOCK_SIZE;	  // normalize between 0 and FLOCK_SIZE-1
   
-	for(i=0; i<FLOCK_SIZE; i++) 
+	for(i=0; i<FLOCK_SIZE; i++) {
 		initialized[i] = 0;		  // Set initialization to 0 (= not yet initialized)
-	
-	printf("Reset: robot %d\n",robot_id_u);
+	}
+  
+    printf("Reset: robot %d\n",robot_id_u);
 }
+
 
 /*
  * Keep given int number within interval {-limit, limit}
@@ -161,6 +152,7 @@ void compute_wheel_speeds(int *msl, int *msr)
 	limit(msr,MAX_SPEED);
 }
 
+
 /*
  *  Update speed according to Reynold's rules
  */
@@ -174,34 +166,48 @@ void reynolds_rules() {
 	float consistency[2] = {0,0};
 	
 	/* Compute averages over the whole flock */
-	for (j=0;j<2;j++)
-		for(i=0; i<FLOCK_SIZE; i++)
+	for (j=0;j<2;j++) {
+		for(i=0; i<FLOCK_SIZE; i++) 
+		{
 			// don't consider yourself for the average
-			if (i != robot_id) {
+			if (i != robot_id) 
+			{
             	rel_avg_speed[j] += relative_speed[i][j];
           		rel_avg_loc[j] += relative_pos[i][j];
 			}			
+		}
+	}
+	
 	
 	/* Rule 1 - Aggregation/Cohesion: move towards the center of mass */
     
-    for (j=0;j<2;j++) 
+    for (j=0;j<2;j++) {	
 		// If center of mass is too far
-	    if (fabs(rel_avg_loc[j]) > RULE1_THRESHOLD)
-			cohesion[j] = rel_avg_loc[j];  // Relative distance to the center of the swarm
-
+        if (fabs(rel_avg_loc[j])> RULE1_THRESHOLD) 
+		{		
+        	cohesion[j] = rel_avg_loc[j] ;  // Relative distance to the center of the swarm
+		}	
+	}
 
 	/* Rule 2 - Dispersion/Separation: keep far enough from flockmates */
-	for (k=0;k<FLOCK_SIZE;k++)
-		if (k != robot_id)        // Loop on flockmates only
+	for (k=0;k<FLOCK_SIZE;k++) {
+		if (k != robot_id) {        // Loop on flockmates only
 			// If neighbor k is too close
-			if (pow(relative_pos[k][0],2)+pow(relative_pos[k][1],2) < RULE2_THRESHOLD) 
+			if (sqrt(pow(relative_pos[k][0],2)+pow(relative_pos[k][1],2)) < RULE2_THRESHOLD) 
+			{
 				for (j=0;j<2;j++) 
+				{
 					dispersion[j] -= relative_pos[k][j]; // Relative distance to k
-
-	/* Rule 3 - Consistency/Alignment: match the speeds of flockmates */
-	for (j=0;j<2;j++)
-		consistency[j] =  rel_avg_speed[j]; // difference speed to the average
+				}
+			}
+		}
+	}
   
+	/* Rule 3 - Consistency/Alignment: match the speeds of flockmates */
+	for (j=0;j<2;j++) {
+		consistency[j] =  rel_avg_speed[j]; // difference speed to the average
+    }
+
     // aggregation of all behaviors with relative influence determined by weights
     for (j=0;j<2;j++) {
     	speed[robot_id][j] = cohesion[j] * RULE1_WEIGHT;
@@ -235,6 +241,7 @@ void process_received_ping_messages(void)
 	double range;
 	char *inbuffer;	// Buffer for the receiver node
     int other_robot_id;
+	
 	while (wb_receiver_get_queue_length(receiver2) > 0) {
 		inbuffer = (char*) wb_receiver_get_data(receiver2);
 		message_direction = wb_receiver_get_emitter_direction(receiver2);
@@ -266,20 +273,19 @@ void process_received_ping_messages(void)
 
 // the main function
 int main(){ 
-	int msl, msr;					// Wheel speeds
+	int msl, msr;			// Wheel speeds
 	int bmsl, bmsr, sum_sensors;	// Braitenberg parameters
-	int i;							// Loop counter
-	int distances[NB_SENSORS];		// Array for the distance sensor readings
-	int max_sens;					// Store highest sensor value
-		
- 	reset();						// Resetting the robot
+	int i;				// Loop counter
+	int distances[NB_SENSORS];	// Array for the distance sensor readings
+	int max_sens;			// Store highest sensor value
+	
+ 	reset();			// Resetting the robot
 
 	msl = 0; msr = 0; 
 	max_sens = 0; 
 	
 	// Forever
 	for(;;){
-
 		bmsl = 0; bmsr = 0;
         sum_sensors = 0;
 		max_sens = 0;
@@ -287,17 +293,17 @@ int main(){
 		/* Braitenberg */
 		for(i=0;i<NB_SENSORS;i++) {
 			distances[i]=wb_distance_sensor_get_value(ds[i]); //Read sensor values
-            sum_sensors += distances[i]; // Add up sensor values
-            max_sens = max_sens>distances[i]?max_sens:distances[i]; // Check if new highest sensor value
+			sum_sensors += distances[i]; // Add up sensor values
+			max_sens = max_sens>distances[i]?max_sens:distances[i]; // Check if new highest sensor value
 
-            // Weighted sum of distance sensor values for Braitenburg vehicle
-            bmsr += e_puck_matrix[i] * distances[i];
-            bmsl += e_puck_matrix[i+NB_SENSORS] * distances[i];
+			// Weighted sum of distance sensor values for Braitenburg vehicle
+			bmsr += e_puck_matrix[i] * distances[i];
+			bmsl += e_puck_matrix[i+NB_SENSORS] * distances[i];
         }
 
 		// Adapt Braitenberg values (empirical tests)
         bmsl/=MIN_SENS; bmsr/=MIN_SENS;
-		//bmsl+=66; bmsr+=72;
+		// bmsl+=66; bmsr+=72;
               
 		/* Send and get information */
 		send_ping();  // sending a ping to other robot, so they can measure their distance to this robot
