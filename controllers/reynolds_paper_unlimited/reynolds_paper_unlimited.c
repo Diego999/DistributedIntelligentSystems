@@ -44,6 +44,7 @@ WbDeviceTag compass2;
 int robot_id_u, robot_id;	// Unique and normalized (between 0 and FLOCK_SIZE-1) robot ID
 
 float relative_pos[FLOCK_SIZE][3];	// relative X, Z, Theta of all robots
+float neighboors_bearing[FLOCK_SIZE]; // Bearing of the neighboors
 float prev_relative_pos[FLOCK_SIZE][3];	// Previous relative  X, Z, Theta values
 float my_position[3];     		// X, Z, Theta of the current robot
 float prev_my_position[3];  		// X, Z, Theta of the current robot in the previous time step
@@ -176,64 +177,8 @@ void compute_wheel_speeds(int *msl, int *msr)
  *  Update speed according to Reynold's rules
  */
 
-void reynolds_rules() {
-	int i, j, k;			// Loop counters
-	float rel_avg_loc[2] = {0,0};	// Flock average positions
-	float rel_avg_speed[2] = {0,0};	// Flock average speeds
-	float cohesion[2] = {0,0};
-	float dispersion[2] = {0,0};
-	float consistency[2] = {0,0};
-	
-	/* Compute averages over the whole flock */
-	for (j=0;j<2;j++) {
-		for(i=0; i<FLOCK_SIZE; i++) 
-		{
-			// don't consider yourself for the average
-			if (i != robot_id) 
-			{
-            	rel_avg_speed[j] += relative_speed[i][j];
-          		rel_avg_loc[j] += relative_pos[i][j];
-			}			
-		}
-	}
-	
-	
-	/* Rule 1 - Aggregation/Cohesion: move towards the center of mass */
-    
-    for (j=0;j<2;j++) {	
-		// If center of mass is too far
-        if (fabs(rel_avg_loc[j])> RULE1_THRESHOLD) 
-		{		
-        	cohesion[j] = rel_avg_loc[j] ;  // Relative distance to the center of the swarm
-		}	
-	}
+void flocking_behavior() {
 
-	/* Rule 2 - Dispersion/Separation: keep far enough from flockmates */
-	for (k=0;k<FLOCK_SIZE;k++) {
-		if (k != robot_id) {        // Loop on flockmates only
-			// If neighbor k is too close
-			if (sqrt(pow(relative_pos[k][0],2)+pow(relative_pos[k][1],2)) < RULE2_THRESHOLD) 
-			{
-				for (j=0;j<2;j++) 
-				{
-					dispersion[j] -= relative_pos[k][j]; // Relative distance to k
-				}
-			}
-		}
-	}
-  
-	/* Rule 3 - Consistency/Alignment: match the speeds of flockmates */
-	for (j=0;j<2;j++) {
-		consistency[j] =  rel_avg_speed[j]; // difference speed to the average
-    }
-
-    // aggregation of all behaviors with relative influence determined by weights
-    for (j=0;j<2;j++) {
-    	speed[robot_id][j] = cohesion[j] * RULE1_WEIGHT;
-        speed[robot_id][j] +=  dispersion[j] * RULE2_WEIGHT;
-        speed[robot_id][j] +=  consistency[j] * RULE3_WEIGHT;
-        speed[robot_id][j] += (migr[j]-my_position[j]) * MIGRATION_WEIGHT;
-     }
 }
 
 /*
@@ -243,8 +188,8 @@ void reynolds_rules() {
 */
 void send_ping(void)  
 {
-    char out[10];
-	strcpy(out,robot_name);  // in the ping message we send the name of the robot.
+    char out[100];
+	sprintf(out,"%s;%.5f", robot_name, get_bearing_in_degrees());
 	wb_emitter_send(emitter2,out,strlen(out)+1); 
 }
 
@@ -260,6 +205,7 @@ void process_received_ping_messages(void)
 	double range;
 	char *inbuffer;	// Buffer for the receiver node
     int other_robot_id;
+    double other_robot_bearing;
 	
 	while (wb_receiver_get_queue_length(receiver2) > 0) {
 		inbuffer = (char*) wb_receiver_get_data(receiver2);
@@ -273,6 +219,8 @@ void process_received_ping_messages(void)
 		range = sqrt((1/message_rssi)); 
 
 		other_robot_id = (int)(inbuffer[5]-'0');  // since the name of the sender is in the received message. Note: this does not work for robots having id bigger than 9!
+		other_robot_bearing = 0;
+		sscanf(inbuffer+7, "%lf", &other_robot_bearing);
 		
 		// Get position update
 		prev_relative_pos[other_robot_id][0] = relative_pos[other_robot_id][0];
@@ -281,7 +229,8 @@ void process_received_ping_messages(void)
 		relative_pos[other_robot_id][0] = range*cos(theta);  // relative x pos
 		relative_pos[other_robot_id][1] = -1.0 * range*sin(theta);   // relative y pos
 
-//		printf("Robot %s, from robot %d, x: %g, y: %g, theta %g, my theta %g\n",robot_name,other_robot_id,relative_pos[other_robot_id][0],relative_pos[other_robot_id][1],my_position[2]*180.0/3.141592,my_position[2]*180.0/3.141592);
+		// Get bearing
+		neighboors_bearing[other_robot_id] = other_robot_bearing;
 
 		relative_speed[other_robot_id][0] = (1/DELTA_T)*(relative_pos[other_robot_id][0]-prev_relative_pos[other_robot_id][0]);
 		relative_speed[other_robot_id][1] = (1/DELTA_T)*(relative_pos[other_robot_id][1]-prev_relative_pos[other_robot_id][1]);		
@@ -338,8 +287,8 @@ int main(){
 		speed[robot_id][0] = (1/DELTA_T)*(my_position[0]-prev_my_position[0]);
 		speed[robot_id][1] = (1/DELTA_T)*(my_position[1]-prev_my_position[1]);
     
-		// Reynold's rules with all previous info (updates the speed[][] table)
-		reynolds_rules();
+		// Flocking behavior of the paper
+		flocking_behavior();
     
 		// Compute wheels speed from reynold's speed
 		compute_wheel_speeds(&msl, &msr);
