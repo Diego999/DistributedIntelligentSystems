@@ -8,6 +8,7 @@
 #include <webots/distance_sensor.h>
 #include <webots/emitter.h>
 #include <webots/receiver.h>
+#include <webots/compass.h>
 
 //Braitenberg parameters for obstacle avoidance
 #define NB_SENSORS		8	  // Number of distance sensors
@@ -38,6 +39,7 @@ int e_puck_matrix[16] = {17,29,34,10,8,-38,-56,-76,-72,-58,-36,8,10,36,28,18}; /
 WbDeviceTag ds[NB_SENSORS];	// Handle for the infrared distance sensors
 WbDeviceTag receiver2;		// Handle for the receiver node
 WbDeviceTag emitter2;		// Handle for the emitter node
+WbDeviceTag compass2;
 
 int robot_id_u, robot_id;	// Unique and normalized (between 0 and FLOCK_SIZE-1) robot ID
 
@@ -61,7 +63,7 @@ static void reset()
 
 	receiver2 = wb_robot_get_device("receiver2");
 	emitter2 = wb_robot_get_device("emitter2");
-	
+	compass2 = wb_robot_get_device("compass2");
 	
 	int i;
 	char s[4]="ps0";
@@ -75,7 +77,8 @@ static void reset()
     	wb_distance_sensor_enable(ds[i],64);
 
 	wb_receiver_enable(receiver2,64);
-
+	wb_compass_enable(compass2, 64);
+	
 	//Reading the robot's name. Pay attention to name specification when adding robots to the simulation!
 	sscanf(robot_name,"epuck%d",&robot_id_u); // read robot id from the robot's name
 	robot_id = robot_id_u%FLOCK_SIZE;	  // normalize between 0 and FLOCK_SIZE-1
@@ -87,7 +90,23 @@ static void reset()
     printf("Reset: robot %d\n",robot_id_u);
 }
 
+double get_bearing_in_degrees() {
+	const double *north = wb_compass_get_values(compass2);
+	double rad = atan2(north[0], north[2]);
+	double bearing = (rad - 1.5708) / M_PI * 180.0;
+	if (bearing < 0.0)
+		bearing = bearing + 360.0;
+	return bearing;
+}
 
+double get_migr_bearing_in_degrees() {
+	//const double *north = wb_compass_get_values(compass2);
+	double rad = atan2(migr[0], migr[1]);
+	double bearing = (rad - 1.5708) / M_PI * 180.0;
+	if (bearing < 0.0)
+		bearing = bearing + 360.0;
+	return bearing;
+}
 /*
  * Keep given int number within interval {-limit, limit}
  */
@@ -280,13 +299,13 @@ int main(){
 	int max_sens;			// Store highest sensor value
 	
  	reset();			// Resetting the robot
-
+  
 	msl = 0; msr = 0; 
 	max_sens = 0; 
 	
 	// Forever
 	for(;;){
-		bmsl = 0; bmsr = 0;
+        bmsl = 0; bmsr = 0;
         sum_sensors = 0;
 		max_sens = 0;
                 
