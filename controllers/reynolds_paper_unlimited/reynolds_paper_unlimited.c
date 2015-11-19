@@ -34,6 +34,8 @@
 
 #define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
 
+
+
 int e_puck_matrix[16] = {17,29,34,10,8,-38,-56,-76,-72,-58,-36,8,10,36,28,18}; // for obstacle avoidance
 
 WbDeviceTag ds[NB_SENSORS];	// Handle for the infrared distance sensors
@@ -177,8 +179,43 @@ void compute_wheel_speeds(int *msl, int *msr)
  *  Update speed according to Reynold's rules
  */
 
-void flocking_behavior() {
+void flocking_behavior() 
+{
+	int i;
+	float h[2];
+	float a[2], ac[2];
+	float u = 0;
+	float norm = 0;
+	float dot = 0;
 
+	// Heading vector
+	h[0] = h[1] = 0;
+	for(i = 0; i < FLOCK_SIZE; ++i) {
+		h[0] += cosf(neighboors_bearing[i]);
+		h[1] += cosf(neighboors_bearing[i]);
+	}
+	norm = sqrtf(h[0]*h[0] + h[1]*h[1]);
+	h[0] /= norm;
+	h[1] /= norm;
+	
+	// Motion control
+
+	// Migration heading
+	a[0] = migr[0] - my_position[0];
+	a[1] = migr[1] - my_position[1];
+	norm = sqrt(a[0]*a[0] + a[1]*a[1]);
+	a[0] /= norm;
+	a[1] /= norm;
+
+	// Current heading
+	ac[0] = speed[robot_id][0];
+	ac[1] = speed[robot_id][1];
+	norm = sqrt(ac[0]*ac[0] + ac[1]*ac[1]);
+	ac[0] /= norm;
+	ac[1] /= norm;
+
+	dot = ac[0]*a[0] + ac[1]*a[1];
+	u = (dot <= 0) ? 0 : dot*MAX_SPEED;
 }
 
 /*
