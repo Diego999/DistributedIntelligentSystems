@@ -35,8 +35,13 @@
 #define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
 
 
+#define KP_COEFFICIENT 0.5f
+#define ODES_COEFFICIENT 400
+#define C_COEFFICIENT 1
+#define BETA_COEFFICIENT 12
 
 int e_puck_matrix[16] = {17,29,34,10,8,-38,-56,-76,-72,-58,-36,8,10,36,28,18}; // for obstacle avoidance
+float sensor_degrees[] = {10.0, 20.0, 45.0, 165.0, 195.0, 270.0, 340.0, 350.0};
 
 WbDeviceTag ds[NB_SENSORS];	// Handle for the infrared distance sensors
 WbDeviceTag receiver2;		// Handle for the receiver node
@@ -179,43 +184,75 @@ void compute_wheel_speeds(int *msl, int *msr)
  *  Update speed according to Reynold's rules
  */
 
-void flocking_behavior() 
+void flocking_behavior(int *msl, int *msr) 
 {
 	int i;
 	float h[2];
 	float a[2], ac[2];
+	float p[2];
+
 	float u = 0;
 	float norm = 0;
 	float dot = 0;
+	float w = 0;
+	float fk = 0;
 
-	// Heading vector
-	h[0] = h[1] = 0;
+	// Heading vector H
+	h[0] = h[1] = 0.0f;
 	for(i = 0; i < FLOCK_SIZE; ++i) {
-		h[0] += cosf(neighboors_bearing[i]);
-		h[1] += cosf(neighboors_bearing[i]);
+		h[0] += cosf(neighboors_bearing[i] * M_PI / 180.0);
+		h[1] += sinf(neighboors_bearing[i] * M_PI / 180.0);
 	}
+	// Do we need to take the average ?
+	h[0] /= ((float)NB_SENSORS);
+	h[1] /= ((float)NB_SENSORS);
+
 	norm = sqrtf(h[0]*h[0] + h[1]*h[1]);
 	h[0] /= norm;
 	h[1] /= norm;
 	
-	// Motion control
+	// Proximal control behavior fk and P
+	p[0] = p[1] = .0f;
+	for(i = 0; i < NB_SENSORS; ++i) {
+		fk = ds[i]-ODES_COEFFICIENT;
+		fk = (fk*fk)/C_COEFFICIENT;
 
-	// Migration heading
-	a[0] = migr[0] - my_position[0];
-	a[1] = migr[1] - my_position[1];
-	norm = sqrt(a[0]*a[0] + a[1]*a[1]);
+		if (ds[i] >= ODES_COEFFICIENT)
+			fk *= -1.0f;
+
+		p[0] += cosf(sensor_degrees[i] * M_PI / 180.0)*fk;
+		p[1] += sinf(sensor_degrees[i] * M_PI / 180.0)*fk;
+	}
+	p[0] /= ((float)NB_SENSORS);
+	p[1] /= ((float)NB_SENSORS);
+
+	// Compute final desired vector a
+	a[0] = a[1] = 0.0f;
+	a[0] = h[0] + BETA_COEFFICIENT * p[0];
+	a[1] = h[1] + BETA_COEFFICIENT * p[1];
+	norm = sqrtf(a[0]*a[0] + a[1]*a[1]);
 	a[0] /= norm;
 	a[1] /= norm;
+
+	// Motion control U
 
 	// Current heading
 	ac[0] = speed[robot_id][0];
 	ac[1] = speed[robot_id][1];
-	norm = sqrt(ac[0]*ac[0] + ac[1]*ac[1]);
+	norm = sqrtf(ac[0]*ac[0] + ac[1]*ac[1]);
 	ac[0] /= norm;
 	ac[1] /= norm;
 
 	dot = ac[0]*a[0] + ac[1]*a[1];
-	u = (dot <= 0) ? 0 : dot*MAX_SPEED;
+	u = (dot >= 0.0) ? dot*MAX_SPEED : 0.0;
+
+	// Angular velocity w
+
+	w = KP_COEFFICIENT * (get_bearing_in_degrees() - get_migr_bearing_in_degrees()) * M_PI / 180.0;
+
+	// Compute wheel speed
+	*msr = ((int)((u - w * AXLE_LENGTH / 2.0) * 60.0 / (2.0 * M_PI * WHEEL_RADIUS)));
+	*msl = ((int)((u + w * AXLE_LENGTH / 2.0) * 60.0 / (2.0 * M_PI * WHEEL_RADIUS)));
 }
 
 /*
@@ -324,11 +361,8 @@ int main(){
 		speed[robot_id][0] = (1/DELTA_T)*(my_position[0]-prev_my_position[0]);
 		speed[robot_id][1] = (1/DELTA_T)*(my_position[1]-prev_my_position[1]);
     
-		// Flocking behavior of the paper
-		flocking_behavior();
-    
-		// Compute wheels speed from reynold's speed
-		compute_wheel_speeds(&msl, &msr);
+		// Flocking behavior of the paper with the wheels speed
+		flocking_behavior(&msl, &msr);
     
 		// Adapt speed instinct to distance sensor values
 		if (sum_sensors > NB_SENSORS*MIN_SENS) {
