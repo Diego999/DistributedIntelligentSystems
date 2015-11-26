@@ -23,23 +23,11 @@
 #define WHEEL_RADIUS	0.0205	  // Wheel radius (meters)
 #define DELTA_T			0.064	  // Timestep (seconds)
 
-
-#define RULE1_THRESHOLD   0.2    // Threshold to activate aggregation rule. default 0.20
-#define RULE1_WEIGHT      0.2	 // Weight of aggregation rule. default 0.20
-
-#define RULE2_THRESHOLD   0.1    // Threshold to activate dispersion rule. default 0.1
-#define RULE2_WEIGHT      1.0	 // Weight of dispersion rule. default 1.0
-
-#define RULE3_WEIGHT      0.01   // Weight of consistency rule. default 0.01
-
-#define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
-
-
 #define KP_COEFFICIENT 0.5f
 #define ODES_COEFFICIENT 400
-#define C_COEFFICIENT 1
-#define BETA_COEFFICIENT 12
-
+#define C_COEFFICIENT 4096.0
+#define BETA_COEFFICIENT 3
+ 
 int e_puck_matrix[16] = {17,29,34,10,8,-38,-56,-76,-72,-58,-36,8,10,36,28,18}; // for obstacle avoidance
 float sensor_degrees[] = {10.0, 20.0, 45.0, 165.0, 195.0, 270.0, 340.0, 350.0};
 
@@ -153,37 +141,6 @@ void update_self_motion(int msl, int msr) {
 		my_position[2] += 2.0*M_PI;
 }
 
-/*
- * Computes wheel speed given a certain X,Z speed
- */
-void compute_wheel_speeds(int *msl, int *msr) 
-{
-	// Compute wanted position from Reynold's speed and current location
-	float x = speed[robot_id][0]*cosf(my_position[2]) - speed[robot_id][1]*sinf(my_position[2]); // x in robot coordinates
-	float z = -speed[robot_id][0]*sinf(my_position[2]) - speed[robot_id][1]*cosf(my_position[2]); // z in robot coordinates
-	
-	float Ku = 0.2;   // Forward control coefficient
-	float Kw = 10.0;  // Rotational control coefficient
-	float range = sqrtf(x*x + z*z);	// Distance to the wanted position
-	float bearing = -atan2(x, z);	// Orientation of the wanted position
-	
-	// Compute forward control
-	float u = Ku*range*cosf(bearing);
-	// Compute rotational control
-	float w = Kw*range*sinf(bearing);
-	
-	// Convert to wheel speeds!
-	*msl = 50*(u - AXLE_LENGTH*w/2.0) / WHEEL_RADIUS;
-	*msr = 50*(u + AXLE_LENGTH*w/2.0) / WHEEL_RADIUS;
-	limit(msl,MAX_SPEED);
-	limit(msr,MAX_SPEED);
-}
-
-
-/*
- *  Update speed according to Reynold's rules
- */
-
 void flocking_behavior(int *msl, int *msr) 
 {
 	int i;
@@ -200,17 +157,16 @@ void flocking_behavior(int *msl, int *msr)
 	// Heading vector H
 	h[0] = h[1] = 0.0f;
 	for(i = 0; i < FLOCK_SIZE; ++i) {
-		h[0] += cosf(neighboors_bearing[i] * M_PI / 180.0);
-		h[1] += sinf(neighboors_bearing[i] * M_PI / 180.0);
+		if (i != robot_id) {
+			h[0] += cosf((get_bearing_in_degrees() - neighboors_bearing[i]) * M_PI / 180.0);
+			h[1] += sinf((get_bearing_in_degrees() - neighboors_bearing[i]) * M_PI / 180.0);
+		}
 	}
-	// Do we need to take the average ?
-	h[0] /= ((float)NB_SENSORS);
-	h[1] /= ((float)NB_SENSORS);
-
 	norm = sqrtf(h[0]*h[0] + h[1]*h[1]);
 	h[0] /= norm;
 	h[1] /= norm;
-	
+	printf("H : %.4lf %.4lf\n", h[0], h[1]);	
+
 	// Proximal control behavior fk and P
 	p[0] = p[1] = .0f;
 	for(i = 0; i < NB_SENSORS; ++i) {
@@ -225,14 +181,16 @@ void flocking_behavior(int *msl, int *msr)
 	}
 	p[0] /= ((float)NB_SENSORS);
 	p[1] /= ((float)NB_SENSORS);
+	printf("P : %.4lf %.4lf\n", p[0], p[1]);
 
 	// Compute final desired vector a
 	a[0] = a[1] = 0.0f;
 	a[0] = h[0] + BETA_COEFFICIENT * p[0];
 	a[1] = h[1] + BETA_COEFFICIENT * p[1];
-	norm = sqrtf(a[0]*a[0] + a[1]*a[1]);
+	norm = sqrtf(a[0]*a[0] + a[1]*a[1]); 
 	a[0] /= norm;
 	a[1] /= norm;
+	//printf("A : %.4lf %.4lf\n", a[0], a[1]);
 
 	// Motion control U
 
@@ -244,15 +202,23 @@ void flocking_behavior(int *msl, int *msr)
 	ac[1] /= norm;
 
 	dot = ac[0]*a[0] + ac[1]*a[1];
-	u = (dot >= 0.0) ? dot*MAX_SPEED : 0.0;
-
+	u = (dot >= 0.0) ? dot * 0.1287 : 0.0;
+	//printf("U : %.4lf\n", u);
 	// Angular velocity w
 
-	w = KP_COEFFICIENT * (get_bearing_in_degrees() - get_migr_bearing_in_degrees()) * M_PI / 180.0;
+	w = KP_COEFFICIENT * (atanf(ac[1] / ac[0]) - atanf(a[1] / a[0]));
+	//printf("W : %.4lf %.4lf %.4lf\n", w, a[0], a[1]);
 
 	// Compute wheel speed
-	*msr = ((int)((u - w * AXLE_LENGTH / 2.0) * 60.0 / (2.0 * M_PI * WHEEL_RADIUS)));
-	*msl = ((int)((u + w * AXLE_LENGTH / 2.0) * 60.0 / (2.0 * M_PI * WHEEL_RADIUS)));
+	*msr = ((int)(50*(u - AXLE_LENGTH*w/2.0) / WHEEL_RADIUS));
+	*msl = ((int)(50*(u + AXLE_LENGTH*w/2.0) / WHEEL_RADIUS));
+
+	//*msr *= 1000.0 / (2.0 * M_PI);
+	//*msl *= 1000.0 / (2.0 * M_PI);
+	limit(msl,MAX_SPEED);
+	limit(msr,MAX_SPEED);
+
+	printf("MSL/R %d %d\n", *msl, *msr);
 }
 
 /*
@@ -317,8 +283,8 @@ void process_received_ping_messages(void)
 int main(){ 
 	int msl, msr;			// Wheel speeds
 	int bmsl, bmsr, sum_sensors;	// Braitenberg parameters
-	int i;				// Loop counter
-	int distances[NB_SENSORS];	// Array for the distance sensor readings
+	//int i;				// Loop counter
+	//int distances[NB_SENSORS];	// Array for the distance sensor readings
 	int max_sens;			// Store highest sensor value
 	
  	reset();			// Resetting the robot
@@ -331,8 +297,8 @@ int main(){
         bmsl = 0; bmsr = 0;
         sum_sensors = 0;
 		max_sens = 0;
-                
-		/* Braitenberg */
+/*                
+		// Braitenberg
 		for(i=0;i<NB_SENSORS;i++) {
 			distances[i]=wb_distance_sensor_get_value(ds[i]); //Read sensor values
 			sum_sensors += distances[i]; // Add up sensor values
@@ -346,7 +312,7 @@ int main(){
 		// Adapt Braitenberg values (empirical tests)
         bmsl/=MIN_SENS; bmsr/=MIN_SENS;
 		// bmsl+=66; bmsr+=72;
-              
+*/              
 		/* Send and get information */
 		send_ping();  // sending a ping to other robot, so they can measure their distance to this robot
 		
@@ -371,8 +337,8 @@ int main(){
 		}
     
 		// Add Braitenberg
-		msl += bmsl;
-		msr += bmsr;
+		//msl += bmsl;
+		//msr += bmsr;
                   
 		// Set speed
 		wb_differential_wheels_set_speed(msl,msr);
