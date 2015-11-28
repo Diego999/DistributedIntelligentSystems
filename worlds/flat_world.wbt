@@ -1790,7 +1790,7 @@ DEF epuck0 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_unlimited"
+  controller "reynolds_limited"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -3417,7 +3417,7 @@ DEF epuck1 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_unlimited"
+  controller "reynolds_limited"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -5044,7 +5044,7 @@ DEF epuck2 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_unlimited"
+  controller "reynolds_limited"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -6671,7 +6671,7 @@ DEF epuck3 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_unlimited"
+  controller "reynolds_limited"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -8310,7 +8310,7 @@ DEF epuck4 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_unlimited"
+  controller "reynolds_limited"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
