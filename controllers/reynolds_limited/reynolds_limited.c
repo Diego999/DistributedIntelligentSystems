@@ -49,7 +49,8 @@ float speed[FLOCK_SIZE][2];		// Speeds calculated with Reynold's rules
 float relative_speed[FLOCK_SIZE][2];	// Speeds calculated with Reynold's rules
 int initialized[FLOCK_SIZE];		// != 0 if initial positions have been received
 float migr[2] = {0,-50};	        // Migration vector
-char* robot_name; 
+char* robot_name;
+char robot_number[16];
 
 
 /*
@@ -69,8 +70,9 @@ static void reset()
 		ds[i]=wb_robot_get_device(s);	// the device name is specified in the world file
 		s[2]++;				// increases the device number
 	}
-	robot_name=(char*) wb_robot_get_name(); 
-
+	
+	robot_name=(char*) wb_robot_get_name();
+   
 	for(i=0;i<NB_SENSORS;i++)
     	wb_distance_sensor_enable(ds[i],64);
 
@@ -79,12 +81,13 @@ static void reset()
 	//Reading the robot's name. Pay attention to name specification when adding robots to the simulation!
 	sscanf(robot_name,"epuck%d",&robot_id_u); // read robot id from the robot's name
 	robot_id = robot_id_u%FLOCK_SIZE;	  // normalize between 0 and FLOCK_SIZE-1
+	sprintf(robot_number, "%d", robot_id_u);
   
 	for(i=0; i<FLOCK_SIZE; i++) {
 		initialized[i] = 0;		  // Set initialization to 0 (= not yet initialized)
 	}
   
-    printf("Reset: robot %d\n",robot_id_u);
+    printf("Reset: robot %s\n",robot_number);
 }
 
 
@@ -226,8 +229,8 @@ void reynolds_rules() {
 */
 void send_ping(void)  
 {
-    char out[10];
-	strcpy(out,robot_name);  // in the ping message we send the name of the robot.
+    char out[16];
+	strcpy(out,robot_number);  // in the ping message we send the name of the robot.
 	wb_emitter_send(emitter2,out,strlen(out)+1); 
 }
 
@@ -260,7 +263,8 @@ void process_received_ping_messages(void)
         theta = theta + my_position[2]; // find the relative theta;
 		range = sqrt((1/message_rssi)); 
 
-		other_robot_id = (int)(inbuffer[5]-'0');  // since the name of the sender is in the received message. Note: this does not work for robots having id bigger than 9!
+		//other_robot_id = (int)(inbuffer[5]-'0');  // old: since the name of the sender is in the received message. Note: this does not work for robots having id bigger than 9!
+		sscanf(inbuffer, "%d", &other_robot_id);
 		
 		// Get position update
 		prev_relative_pos[other_robot_id][0] = relative_pos[other_robot_id][0];
