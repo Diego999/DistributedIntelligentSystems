@@ -48,7 +48,7 @@ float prev_my_position[3];  		// X, Z, Theta of the current robot in the previou
 float speed[FLOCK_SIZE][2];		// Speeds calculated with Reynold's rules
 float relative_speed[FLOCK_SIZE][2];	// Speeds calculated with Reynold's rules
 int initialized[FLOCK_SIZE];		// != 0 if initial positions have been received
-float migr[2] = {0,-100};	        // Migration vector
+float migr[2] = {0,-50};	        // Migration vector
 char* robot_name; 
 
 
@@ -103,7 +103,7 @@ void limit(int *number, int limit) {
  */
 void update_self_motion(int msl, int msr) { 
 	float theta = my_position[2];
-  
+   //printf("update self motion, %d, %d\n", msl, msr);
 	// Compute deltas of the robot
 	float dr = (float)msr * SPEED_UNIT_RADS * WHEEL_RADIUS * DELTA_T;
 	float dl = (float)msl * SPEED_UNIT_RADS * WHEEL_RADIUS * DELTA_T;
@@ -124,6 +124,8 @@ void update_self_motion(int msl, int msr) {
 		my_position[2] -= 2.0*M_PI;
 	if (my_position[2] < 0) 
 		my_position[2] += 2.0*M_PI;
+	
+	//printf("orientation: %f\n", my_position[2]);
 }
 
 /*
@@ -246,10 +248,15 @@ void process_received_ping_messages(void)
 		inbuffer = (char*) wb_receiver_get_data(receiver2);
 		message_direction = wb_receiver_get_emitter_direction(receiver2);
 		message_rssi = wb_receiver_get_signal_strength(receiver2);
-		double y = message_direction[2];
-		double x = message_direction[1];
-
-        theta =	-atan2(y,x);
+		
+		//should be x and z position (y is up)
+		double x = message_direction[0];
+		double z = message_direction[2];
+		
+      
+      //printf("ROBOT %d: message_direction: %f, %f, %f\n", robot_id, message_direction[0], message_direction[1], message_direction[2]);
+      
+        theta =	-atan2(z,x);
         theta = theta + my_position[2]; // find the relative theta;
 		range = sqrt((1/message_rssi)); 
 
@@ -262,7 +269,7 @@ void process_received_ping_messages(void)
 		relative_pos[other_robot_id][0] = range*cos(theta);  // relative x pos
 		relative_pos[other_robot_id][1] = -1.0 * range*sin(theta);   // relative y pos
 
-//		printf("Robot %s, from robot %d, x: %g, y: %g, theta %g, my theta %g\n",robot_name,other_robot_id,relative_pos[other_robot_id][0],relative_pos[other_robot_id][1],my_position[2]*180.0/3.141592,my_position[2]*180.0/3.141592);
+		printf("Robot %s, from robot %d, x: %g, y: %g, theta %g, my theta %g\n",robot_name,other_robot_id,relative_pos[other_robot_id][0],relative_pos[other_robot_id][1],my_position[2]*180.0/3.141592,my_position[2]*180.0/3.141592);
 
 		relative_speed[other_robot_id][0] = (1/DELTA_T)*(relative_pos[other_robot_id][0]-prev_relative_pos[other_robot_id][0]);
 		relative_speed[other_robot_id][1] = (1/DELTA_T)*(relative_pos[other_robot_id][1]-prev_relative_pos[other_robot_id][1]);		
@@ -302,13 +309,15 @@ int main(){
         }
 
 		// Adapt Braitenberg values (empirical tests)
-        bmsl/=MIN_SENS; bmsr/=MIN_SENS;
-		// bmsl+=66; bmsr+=72;
-              
+      bmsl/=MIN_SENS; bmsr/=MIN_SENS;
+		bmsl+=66; bmsr+=72;
+      
 		/* Send and get information */
 		send_ping();  // sending a ping to other robot, so they can measure their distance to this robot
 		
 		process_received_ping_messages();
+		
+		//printf("ROBOT %d: wheels %d, %d\n", robot_id, bmsl, bmsr);
 					
 		// Compute self position
 		prev_my_position[0] = my_position[0];
@@ -318,12 +327,17 @@ int main(){
 		
 		speed[robot_id][0] = (1/DELTA_T)*(my_position[0]-prev_my_position[0]);
 		speed[robot_id][1] = (1/DELTA_T)*(my_position[1]-prev_my_position[1]);
-    
+		
 		// Reynold's rules with all previous info (updates the speed[][] table)
 		reynolds_rules();
-    
+      
+      printf("ROBOT %d: wanted position: %f, %f\n", robot_id, speed[robot_id][0], speed[robot_id][1]);
+      
 		// Compute wheels speed from reynold's speed
 		compute_wheel_speeds(&msl, &msr);
+		
+		
+		//printf("wheels: %d, %d\n", msl, msr);
     
 		// Adapt speed instinct to distance sensor values
 		if (sum_sensors > NB_SENSORS*MIN_SENS) {
@@ -342,4 +356,3 @@ int main(){
 		wb_robot_step(TIME_STEP);
 	}
 }  
-  
