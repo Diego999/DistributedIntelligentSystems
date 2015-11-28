@@ -1,4 +1,5 @@
 #ignore all "build" directores
 build/
 reynolds_unlimited/reynolds_unlimited
+reynolds_paper_unlimited/reynolds_paper_unlimited
 supervisor/supervisor
