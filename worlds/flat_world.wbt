@@ -169,6 +169,7 @@ DEF epuck0 DifferentialWheels {
     DEF emitter Emitter {
       name "emitter2"
       type "infra-red"
+      range 0.2
       channel 1
     }
     DEF compass Compass {
@@ -1808,6 +1809,7 @@ DEF epuck1 DifferentialWheels {
     DEF emitter Emitter {
       name "emitter2"
       type "infra-red"
+      range 0.2
       channel 1
     }
     DEF compass Compass {
@@ -3435,6 +3437,7 @@ DEF epuck2 DifferentialWheels {
     DEF emitter Emitter {
       name "emitter2"
       type "infra-red"
+      range 0.2
       channel 1
     }
     DEF compass Compass {
@@ -5062,6 +5065,7 @@ DEF epuck3 DifferentialWheels {
     DEF emitter Emitter {
       name "emitter2"
       type "infra-red"
+      range 0.2
       channel 1
     }
     DEF compass Compass {
@@ -6689,6 +6693,7 @@ DEF epuck4 DifferentialWheels {
     DEF emitter Emitter {
       name "emitter2"
       type "infra-red"
+      range 0.2
       channel 1
     }
     DEF compass Compass {

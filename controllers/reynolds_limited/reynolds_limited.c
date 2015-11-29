@@ -50,7 +50,7 @@ float relative_speed[FLOCK_SIZE][2];	// Speeds calculated with Reynold's rules
 int initialized[FLOCK_SIZE];		// != 0 if initial positions have been received
 float migr[2] = {0,-50};	        // Migration vector
 char* robot_name;
-char robot_number[16];
+char robot_number[8];
 
 
 /*
@@ -229,7 +229,7 @@ void reynolds_rules() {
 */
 void send_ping(void)  
 {
-    char out[16];
+    char out[8];
 	strcpy(out,robot_number);  // in the ping message we send the name of the robot.
 	wb_emitter_send(emitter2,out,strlen(out)+1); 
 }
