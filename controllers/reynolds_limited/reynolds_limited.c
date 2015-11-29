@@ -52,23 +52,28 @@ float migr[2] = {0,-50};	        // Migration vector
 char* robot_name;
 char robot_number[8];
 
+unsigned int timestamp[FLOCK_SIZE];
+
 
 /*
  * Reset the robot's devices and get its ID
  */
 static void reset() 
 {
+   int i;
 	wb_robot_init();
 
 	receiver2 = wb_robot_get_device("receiver2");
 	emitter2 = wb_robot_get_device("emitter2");
 	
-	
-	int i;
 	char s[4]="ps0";
 	for(i=0; i<NB_SENSORS;i++) {
 		ds[i]=wb_robot_get_device(s);	// the device name is specified in the world file
 		s[2]++;				// increases the device number
+	}
+	
+	for(i=0; i<FLOCK_SIZE; i++) {
+	   timestamp[i] = 0;
 	}
 	
 	robot_name=(char*) wb_robot_get_name();
@@ -223,15 +228,44 @@ void reynolds_rules() {
 }
 
 /*
- *  each robot sends a ping message, so the other robots can measure relative range and bearing to the sender.
- *  the message contains the robot's name
- *  the range and bearing will be measured directly out of message RSSI and direction
+ * sends a ping of a certain robot value
+ * without updating the timestamp
 */
-void send_ping(void)  
-{
-    char out[8];
-	strcpy(out,robot_number);  // in the ping message we send the name of the robot.
-	wb_emitter_send(emitter2,out,strlen(out)+1); 
+void send_ping_robot(int other_robot_id){
+   char out[32];
+	//strcpy(out,robot_number);  // in the ping message we send the name of the robot.
+	sprintf(out, "%d", other_robot_id);
+	sprintf( (out+8), "%u", timestamp[other_robot_id] );
+	
+	printf("timestamp sent: %s\n", out+8);
+	
+	if(other_robot_id != robot_id){
+	   sprintf( (out+16), "%3.4f", relative_pos[other_robot_id][0] );
+	   sprintf( (out+24), "%3.4f", relative_pos[other_robot_id][1] ); 
+	}
+	else{ //no relative pos with the current robot
+	   sprintf( (out+16), "%3.4f", 0.0f );
+	   sprintf( (out+24), "%3.4f", 0.0f );
+	}
+	//printf("%f.4\n", relative_pos[other_robot_id][0] );
+	
+	wb_emitter_send(emitter2,out,32); 
+}
+
+/*
+ * send a ping about the content of all the table
+*/
+void send_ping_all(void){
+   
+   timestamp[robot_id]++;
+   send_ping_robot(robot_id);
+      
+   int i = 0;
+   for(; i < FLOCK_SIZE; i++){
+      if(i != robot_id){
+         send_ping_robot(i);
+      }
+   }
 }
 
 /*
@@ -246,6 +280,7 @@ void process_received_ping_messages(void)
 	double range;
 	char *inbuffer;	// Buffer for the receiver node
     int other_robot_id;
+    unsigned int recv_timestamp;
 	
 	while (wb_receiver_get_queue_length(receiver2) > 0) {
 		inbuffer = (char*) wb_receiver_get_data(receiver2);
@@ -256,27 +291,46 @@ void process_received_ping_messages(void)
 		double x = message_direction[0];
 		double z = message_direction[2];
 		
-      
       //printf("ROBOT %d: message_direction: %f, %f, %f\n", robot_id, message_direction[0], message_direction[1], message_direction[2]);
       
-        theta =	-atan2(z,x);
-        theta = theta + my_position[2]; // find the relative theta;
+      theta =	-atan2(z,x);
+      theta = theta + my_position[2]; // find the relative theta;
 		range = sqrt((1/message_rssi)); 
 
 		//other_robot_id = (int)(inbuffer[5]-'0');  // old: since the name of the sender is in the received message. Note: this does not work for robots having id bigger than 9!
 		sscanf(inbuffer, "%d", &other_robot_id);
+		sscanf( (inbuffer+8), "%u", &recv_timestamp);
 		
-		// Get position update
-		prev_relative_pos[other_robot_id][0] = relative_pos[other_robot_id][0];
-		prev_relative_pos[other_robot_id][1] = relative_pos[other_robot_id][1];
-
-		relative_pos[other_robot_id][0] = range*cos(theta);  // relative x pos
-		relative_pos[other_robot_id][1] = -1.0 * range*sin(theta);   // relative y pos
-
-		printf("Robot %s, from robot %d, x: %g, y: %g, theta %g, my theta %g\n",robot_name,other_robot_id,relative_pos[other_robot_id][0],relative_pos[other_robot_id][1],my_position[2]*180.0/3.141592,my_position[2]*180.0/3.141592);
-
-		relative_speed[other_robot_id][0] = (1/DELTA_T)*(relative_pos[other_robot_id][0]-prev_relative_pos[other_robot_id][0]);
-		relative_speed[other_robot_id][1] = (1/DELTA_T)*(relative_pos[other_robot_id][1]-prev_relative_pos[other_robot_id][1]);		
+		printf("recieved: id%d, ts%d\n", other_robot_id, recv_timestamp);
+		
+		//only update the position if there is something new
+		if(timestamp[other_robot_id] < recv_timestamp){
+		   float relativ_pos_x = 0.0f;
+		   float relativ_pos_z = 0.0f;
+		   
+		   //sscanf( (inbuffer+16), "%f", &relativ_pos_x);
+		   //sscanf( (inbuffer+24), "%f", &relativ_pos_z);
+		   
+		   // Get position update
+		   prev_relative_pos[other_robot_id][0] = relative_pos[other_robot_id][0];
+		   prev_relative_pos[other_robot_id][1] = relative_pos[other_robot_id][1];
+         
+         //get relativ_pos of the sending robot
+		   relative_pos[other_robot_id][0] = range*cos(theta);  // relative x pos
+		   relative_pos[other_robot_id][1] = -1.0 * range*sin(theta);   // relative y pos
+         
+         //add the relativ pos the sending robot gave us
+         relative_pos[other_robot_id][0] += relativ_pos_x;
+         relative_pos[other_robot_id][1] += relativ_pos_z;
+         
+		   //printf("Robot %s, from robot %d, x: %g, y: %g, theta %g, my theta %g\n",robot_name,other_robot_id,relative_pos[other_robot_id][0],relative_pos[other_robot_id][1],my_position[2]*180.0/3.141592,my_position[2]*180.0/3.141592);
+         
+		   relative_speed[other_robot_id][0] = (1/DELTA_T)*(relative_pos[other_robot_id][0]-prev_relative_pos[other_robot_id][0]);
+		   relative_speed[other_robot_id][1] = (1/DELTA_T)*(relative_pos[other_robot_id][1]-prev_relative_pos[other_robot_id][1]);
+		   
+		   timestamp[other_robot_id] = recv_timestamp;
+		   
+		}
 		wb_receiver_next_packet(receiver2);
 	}
 }
@@ -291,6 +345,10 @@ int main(){
 	int max_sens;			// Store highest sensor value
 	
  	reset();			// Resetting the robot
+ 	
+ 	for(i=0; i<FLOCK_SIZE; i++) {
+	   timestamp[i] = 0;
+	}
 
 	msl = 0; msr = 0; 
 	max_sens = 0; 
@@ -317,7 +375,7 @@ int main(){
 		bmsl+=66; bmsr+=72;
       
 		/* Send and get information */
-		send_ping();  // sending a ping to other robot, so they can measure their distance to this robot
+		send_ping_all();  // sending a ping to other robot, so they can measure their distance to this robot
 		
 		process_received_ping_messages();
 		
@@ -335,7 +393,7 @@ int main(){
 		// Reynold's rules with all previous info (updates the speed[][] table)
 		reynolds_rules();
       
-      printf("ROBOT %d: wanted position: %f, %f\n", robot_id, speed[robot_id][0], speed[robot_id][1]);
+      //printf("ROBOT %d: wanted position: %f, %f\n", robot_id, speed[robot_id][0], speed[robot_id][1]);
       
 		// Compute wheels speed from reynold's speed
 		compute_wheel_speeds(&msl, &msr);
