@@ -177,11 +177,11 @@ void compute_fitness_V(float* fit) {
     // compute the projection
     proj = (x_bar - x_bar_old)*(psi_x) + (z_bar - z_bar_old)*psi_z;
     
-    printf("%f\n", x_bar);
-    printf("%f\n", z_bar);
-    printf("%f\n", x_bar_old);
-    printf("%f\n", z_bar_old);
-    printf("%f\n", proj);
+    //printf("%f\n", x_bar);
+    //printf("%f\n", z_bar);
+    //printf("%f\n", x_bar_old);
+    //printf("%f\n", z_bar_old);
+    //printf("%f\n", proj);
     
     // compute the metric
     *fit = (1.0 / MAXSPEED) * proj;

@@ -237,7 +237,7 @@ void send_ping_robot(int other_robot_id){
 	sprintf(out, "%d", other_robot_id);
 	sprintf( (out+8), "%u", timestamp[other_robot_id] );
 	
-	printf("timestamp sent: %s\n", out+8);
+	//printf("timestamp sent: %s\n", out+8);
 	
 	if(other_robot_id != robot_id){
 	   sprintf( (out+16), "%3.4f", relative_pos[other_robot_id][0] );
@@ -301,7 +301,7 @@ void process_received_ping_messages(void)
 		sscanf(inbuffer, "%d", &other_robot_id);
 		sscanf( (inbuffer+8), "%u", &recv_timestamp);
 		
-		printf("recieved: id%d, ts%d\n", other_robot_id, recv_timestamp);
+		//printf("recieved: id%d, ts%d\n", other_robot_id, recv_timestamp);
 		
 		//only update the position if there is something new
 		if(timestamp[other_robot_id] < recv_timestamp){
