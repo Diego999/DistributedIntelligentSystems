@@ -32,6 +32,14 @@ float loc_old[FLOCK_SIZE][3];
 #define fit_cluster_ref 		0.03
 #define fit_orient_ref 			1.0
 #define MAXSPEED                0.1287
+#define SIZE_MAX_CLUSTER        FLOCK_SIZE+1
+#define NB_MAX_CLUSTER          FLOCK_SIZE
+#define END_CLUSTER_IDX         SIZE_MAX_CLUSTER
+#define DH                      0.01
+#define H_MAX                   5.00
+
+int clusters[NB_MAX_CLUSTER][SIZE_MAX_CLUSTER]; //+1 because we want to add END_CLUSTER_IDX
+float dist_robot[FLOCK_SIZE][FLOCK_SIZE];
 
 int offset;					// Offset of robots number
 float migrx, migrz;			// Migration vector
@@ -71,10 +79,10 @@ void compute_fitness(float* fit_c, float* fit_o) {
 		
 		// Angle measure for each robot
 		angle_diff = fabsf(loc[i][2] - orient_migr);
-		*fit_o += angle_diff > M_PI ? 2*M_PI-angle_diff : angle_diff;
+		*fit_o += angle_diff > M_PI ? 2.0*M_PI-angle_diff : angle_diff;
 	}
-	*fit_c /= FLOCK_SIZE*(FLOCK_SIZE+1)/2;
-	*fit_o /= FLOCK_SIZE;
+	*fit_c /= FLOCK_SIZE*(FLOCK_SIZE+1.0)/2.0;
+	*fit_o /= ((float)FLOCK_SIZE);
 }
 
 /*
@@ -180,6 +188,100 @@ void compute_fitness_V(float* fit) {
     
 }
 
+int compare (const void * a, const void * b)
+{
+    return ( *(int*)a - *(int*)b );
+}
+
+float compute_H(float h) {
+    float r = h/2.0;
+    int i,j,k;
+    int temp;
+    int cluster_idx_robot = 0;
+    int cluster_idx = 0;
+    float x, y;
+    float res = 0;
+    float pk = 0;
+    int size = 0;
+
+    // Initialize cluster array
+    for(i = 0; i < NB_MAX_CLUSTER; ++i)
+        for(j = 0; j < SIZE_MAX_CLUSTER; ++j)
+            clusters[i][j] = END_CLUSTER_IDX;
+
+    // Compute distance matrix
+    for(i = 0; i < FLOCK_SIZE; ++i)
+        for(j = 0; j < FLOCK_SIZE; ++j) {
+            x = loc[i][0]-loc[j][0];
+            y = loc[i][1]-loc[j][1];
+
+            dist_robot[i][j] = sqrtf(x*x + y*y);
+            }
+
+    // Find clusters for every robots
+    for(i = 0; i < FLOCK_SIZE; ++i) {
+        // Every robot is a cluster at least of itself
+        cluster_idx_robot = 0;
+        clusters[cluster_idx][cluster_idx_robot] = i;
+
+        // Find other robots to add to the cluster
+        for(j = 0; j < FLOCK_SIZE; ++j)
+            if(i != j && dist_robot[i][j] <= r)
+                clusters[cluster_idx][++cluster_idx_robot] = j;
+
+        ++cluster_idx;
+    }
+
+    // Sort all clusters
+    for(i = 0; clusters[i][0] != END_CLUSTER_IDX && i < NB_MAX_CLUSTER; ++i)
+        qsort(clusters[i], SIZE_MAX_CLUSTER, sizeof(int), compare);
+
+    // Keep only unique clusters
+    for(i = 0; i < NB_MAX_CLUSTER; ++i) {
+        // Avoid empty clusters
+        if(clusters[i][0] == END_CLUSTER_IDX)
+            continue;
+
+        for(j = i+1; j < NB_MAX_CLUSTER; ++j) {
+            // Avoid empty clusters
+            if(clusters[j][0] == END_CLUSTER_IDX)
+                continue;
+
+            temp = 1;
+            for(k = 0; temp == 1 && k < SIZE_MAX_CLUSTER; ++k)
+                if(clusters[i][k] != clusters[j][k])
+                    temp = 0;
+
+            // We have find the same clusters, we remove it
+            if(temp == 1)
+                clusters[j][0] = END_CLUSTER_IDX;
+        }
+    }
+
+    // Compute entropy
+    res = 0.0f;
+    for(i = 0; i < NB_MAX_CLUSTER; ++i)
+        if(clusters[i][0] != END_CLUSTER_IDX) {
+            size = 0;
+            for(j = 0; j < SIZE_MAX_CLUSTER && clusters[i][j] != END_CLUSTER_IDX; ++j)
+                ++size;
+            
+            pk = ((float)size)/((float)FLOCK_SIZE);
+            res += (-pk * log2(pk));
+        }
+
+    return res;
+}
+
+void compute_fitness_S(float* fit) {
+    float res = 0.0f;
+    float h = DH;
+
+    for(h = DH; h < H_MAX; h += DH)
+        res += compute_H(h);
+
+    *fit = res;
+}
 
 /*
  * Main function.
@@ -195,7 +297,8 @@ int main(int argc, char *args[]) {
     float fit_C;
     float fit_V;
     float fit_P;
-		
+	float fit_S;
+
 	for(;;) {
 		wb_robot_step(TIME_STEP);
         
@@ -210,7 +313,6 @@ int main(int argc, char *args[]) {
 				loc[i][1] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[2];
 				loc[i][2] = wb_supervisor_field_get_sf_rotation(robs_rotation[i])[3];
             }
-
             // compute the orientation metric
 			compute_fitness_O(& fit_O);
             
@@ -220,11 +322,14 @@ int main(int argc, char *args[]) {
             // compute the velocity metric
             compute_fitness_V(& fit_V);
             
+            // compute entropy metric
+            compute_fitness_S(& fit_S);
+
             // compute total metric value
             fit_P = fit_O * fit_C * fit_V;
             
             // Display fitness
-			printf("time:%d, orientation , cohesion , velocity : %f, %f ,%f\n", t, fit_O, fit_C, fit_V);
+			printf("time : %d, orientation , cohesion , velocity , entropy : %.4lf, %.4lf, %.4lf, %.4lf\n", t, fit_O, fit_C, fit_V, fit_S);
             
 		}
 		
