@@ -165,11 +165,14 @@ DEF epuck0 DifferentialWheels {
       name "receiver2"
       type "infra-red"
       channel 1
+      byteSize 32
     }
     DEF emitter Emitter {
       name "emitter2"
       type "infra-red"
+      range 0.2
       channel 1
+      byteSize 32
     }
     DEF compass Compass {
       name "compass2"
@@ -1790,7 +1793,7 @@ DEF epuck0 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_unlimited"
+  controller "reynolds_limited"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -1804,11 +1807,14 @@ DEF epuck1 DifferentialWheels {
       name "receiver2"
       type "infra-red"
       channel 1
+      byteSize 32
     }
     DEF emitter Emitter {
       name "emitter2"
       type "infra-red"
+      range 0.2
       channel 1
+      byteSize 32
     }
     DEF compass Compass {
       name "compass2"
@@ -3417,7 +3423,7 @@ DEF epuck1 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_unlimited"
+  controller "reynolds_limited"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -3431,11 +3437,14 @@ DEF epuck2 DifferentialWheels {
       name "receiver2"
       type "infra-red"
       channel 1
+      byteSize 32
     }
     DEF emitter Emitter {
       name "emitter2"
       type "infra-red"
+      range 0.2
       channel 1
+      byteSize 32
     }
     DEF compass Compass {
       name "compass2"
@@ -5044,7 +5053,7 @@ DEF epuck2 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_unlimited"
+  controller "reynolds_limited"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -5058,11 +5067,14 @@ DEF epuck3 DifferentialWheels {
       name "receiver2"
       type "infra-red"
       channel 1
+      byteSize 32
     }
     DEF emitter Emitter {
       name "emitter2"
       type "infra-red"
+      range 0.2
       channel 1
+      byteSize 32
     }
     DEF compass Compass {
       name "compass2"
@@ -6671,7 +6683,7 @@ DEF epuck3 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_unlimited"
+  controller "reynolds_limited"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -6685,11 +6697,14 @@ DEF epuck4 DifferentialWheels {
       name "receiver2"
       type "infra-red"
       channel 1
+      byteSize 32
     }
     DEF emitter Emitter {
       name "emitter2"
       type "infra-red"
+      range 0.2
       channel 1
+      byteSize 32
     }
     DEF compass Compass {
       name "compass2"
@@ -8310,7 +8325,7 @@ DEF epuck4 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_unlimited"
+  controller "reynolds_limited"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
