@@ -233,7 +233,7 @@ float compute_H(float h) {
     }
 
     // Sort all clusters
-    for(i = 0; clusters[i][0] != END_CLUSTER_IDX && i < NB_MAX_CLUSTER; ++i)
+    for(i = 0; i < NB_MAX_CLUSTER && clusters[i][0] != END_CLUSTER_IDX; ++i)
         qsort(clusters[i], SIZE_MAX_CLUSTER, sizeof(int), compare);
 
     // Keep only unique clusters
