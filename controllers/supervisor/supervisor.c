@@ -275,10 +275,14 @@ float compute_H(float h) {
 
 void compute_fitness_S(float* fit) {
     float res = 0.0f;
-    float h = DH;
+    float temp = -1.0f;
+    float h = 0.0f;
 
-    for(h = DH; h < H_MAX; h += DH)
-        res += compute_H(h);
+    while(fabs(temp) >= 1e-4) {
+      temp = compute_H(h);
+      res += temp;
+      h+=DH;
+    }
 
     *fit = res;
 }
@@ -302,7 +306,7 @@ int main(int argc, char *args[]) {
 	for(;;) {
 		wb_robot_step(TIME_STEP);
         
-		if (t % 10 == 0) {
+		if (t % 100 == 0) {
 			for (i=0;i<FLOCK_SIZE;i++) {
                 // initialize old position
                 loc_old[i][0] = loc[i][0];
