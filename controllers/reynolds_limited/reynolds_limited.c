@@ -24,7 +24,7 @@
 
 
 #define RULE1_THRESHOLD   0.2    // Threshold to activate aggregation rule. default 0.20
-#define RULE1_WEIGHT      0.2  // Weight of aggregation rule. default 0.20
+#define RULE1_WEIGHT      0.3  // Weight of aggregation rule. default 0.20
 
 #define RULE2_THRESHOLD   0.1    // Threshold to activate dispersion rule. default 0.1
 #define RULE2_WEIGHT      1.0  // Weight of dispersion rule. default 1.0
@@ -56,6 +56,8 @@ char robot_number[8];
 
 unsigned int timestamp[FLOCK_SIZE];
 
+int currentTimestamp;
+
 
 /*
  * Reset the robot's devices and get its ID
@@ -77,6 +79,7 @@ static void reset()
    for(i=0; i<FLOCK_SIZE; i++) {
       timestamp[i] = 0;
    }
+   currentTimestamp = 1;
    
    robot_name=(char*) wb_robot_get_name();
    
@@ -258,8 +261,8 @@ void send_ping_robot(int other_robot_id){
  * send a ping about the content of all the table
 */
 void send_ping_all(void){
-   
-   timestamp[robot_id]++;
+   //send my position
+   timestamp[robot_id] = currentTimestamp+1;
    send_ping_robot(robot_id);
       
    int i = 0;
@@ -307,11 +310,16 @@ void process_received_ping_messages(void)
       
       //only update the position if there is something new
       if(timestamp[other_robot_id] < recv_timestamp){
+         
+         if(currentTimestamp < recv_timestamp){
+            currentTimestamp = recv_timestamp;
+         }
+         
          float relativ_pos_x = 0.0f;
          float relativ_pos_z = 0.0f;
          
-         //sscanf( (inbuffer+16), "%f", &relativ_pos_x);
-         //sscanf( (inbuffer+24), "%f", &relativ_pos_z);
+         sscanf( (inbuffer+16), "%f", &relativ_pos_x);
+         sscanf( (inbuffer+24), "%f", &relativ_pos_z);
          
          // Get position update
          prev_relative_pos[other_robot_id][0] = relative_pos[other_robot_id][0];
@@ -331,6 +339,9 @@ void process_received_ping_messages(void)
          relative_speed[other_robot_id][1] = (1/DELTA_T)*(relative_pos[other_robot_id][1]-prev_relative_pos[other_robot_id][1]);
          
          timestamp[other_robot_id] = recv_timestamp;
+         
+         //sends info to other robots
+         send_ping_robot(other_robot_id);
          
       }
       wb_receiver_next_packet(receiver2);
@@ -358,7 +369,7 @@ int main(){
    // Forever
    for(;;){
       bmsl = 0; bmsr = 0;
-        sum_sensors = 0;
+      sum_sensors = 0;
       max_sens = 0;
                 
       /* Braitenberg */
@@ -377,7 +388,8 @@ int main(){
       bmsl+=66; bmsr+=72;
       
       /* Send and get information */
-      send_ping_all();  // sending a ping to other robot, so they can measure their distance to this robot
+      timestamp[robot_id]++;
+      send_ping_robot(robot_id); 
       
       process_received_ping_messages();
       
@@ -400,9 +412,8 @@ int main(){
       // Compute wheels speed from reynold's speed
       compute_wheel_speeds(&msl, &msr);
       
-      
       //printf("wheels: %d, %d\n", msl, msr);
-    
+      
       // Adapt speed instinct to distance sensor values
       if (sum_sensors > NB_SENSORS*MIN_SENS) {
          msl -= msl*max_sens/(2*MAX_SENS);
