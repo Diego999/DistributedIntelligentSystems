@@ -281,10 +281,14 @@ float compute_H(float h) {
 void compute_fitness_S(float* fit) {
     float res = 0.0f;
     float h = DH;
+    const float max_entropy = 500.0f;
 
     for(h = DH; h < H_MAX; h += DH)
         res += compute_H(h);
-
+    
+    //have an increasing entropy of [0, 1] (1 is best)
+    res = ( max_entropy-res < 0)? 0.0f : ( max_entropy-res )/max_entropy ;
+    
     *fit = res;
 }
 
