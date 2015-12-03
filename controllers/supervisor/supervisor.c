@@ -164,10 +164,10 @@ void compute_fitness_V(float* fit) {
     for (i=0; i < FLOCK_SIZE; i++){
         // compute the current center of mass
         x_bar += (1/ (double) FLOCK_SIZE) * loc[i][0];
-        z_bar += (1/ (double) FLOCK_SIZE) * loc[i][1];
+        z_bar += (1/ (double) FLOCK_SIZE) * loc[i][2];
         // compute the old previous center of mass
         x_bar_old += (1/ (double) FLOCK_SIZE) * loc_old[i][0];
-        z_bar_old += (1/ (double) FLOCK_SIZE) * loc_old[i][1];
+        z_bar_old += (1/ (double) FLOCK_SIZE) * loc_old[i][2];
     }
     
     // compute migration urge components
