@@ -39,8 +39,8 @@ int braiten_weight[16] = {17,  29,  34,  10, 8,  -68,-66, -86, //left
                           -72, -58, -36, 8,  10, 56,  38, 28 }; //right
 
 WbDeviceTag ds[NB_SENSORS];   // Handle for the infrared distance sensors
-WbDeviceTag receiver2;     // Handle for the receiver node
-WbDeviceTag emitter2;      // Handle for the emitter node
+WbDeviceTag receiver;     // Handle for the receiver node
+WbDeviceTag emitter;      // Handle for the emitter node
 
 int robot_id_u, robot_id;  // Unique and normalized (between 0 and FLOCK_SIZE-1) robot ID
 
@@ -67,8 +67,8 @@ static void reset()
    int i;
    wb_robot_init();
 
-   receiver2 = wb_robot_get_device("receiver2");
-   emitter2 = wb_robot_get_device("emitter2");
+   receiver = wb_robot_get_device("receiver");
+   emitter = wb_robot_get_device("emitter");
    
    char s[4]="ps0";
    for(i=0; i<NB_SENSORS;i++) {
@@ -86,7 +86,7 @@ static void reset()
    for(i=0;i<NB_SENSORS;i++)
       wb_distance_sensor_enable(ds[i],64);
 
-   wb_receiver_enable(receiver2,64);
+   wb_receiver_enable(receiver,64);
 
    //Reading the robot's name. Pay attention to name specification when adding robots to the simulation!
    sscanf(robot_name,"epuck%d",&robot_id_u); // read robot id from the robot's name
@@ -257,7 +257,7 @@ void send_ping_robot(int other_robot_id){
    }
    //printf("%f.4\n", relative_pos[other_robot_id][0] );
    
-   wb_emitter_send(emitter2,out,32); 
+   wb_emitter_send(emitter,out,32); 
 }
 
 /*
@@ -290,10 +290,10 @@ void process_received_ping_messages(void)
     int other_robot_id;
     unsigned int recv_timestamp;
    
-   while (wb_receiver_get_queue_length(receiver2) > 0) {
-      inbuffer = (char*) wb_receiver_get_data(receiver2);
-      message_direction = wb_receiver_get_emitter_direction(receiver2);
-      message_rssi = wb_receiver_get_signal_strength(receiver2);
+   while (wb_receiver_get_queue_length(receiver) > 0) {
+      inbuffer = (char*) wb_receiver_get_data(receiver);
+      message_direction = wb_receiver_get_emitter_direction(receiver);
+      message_rssi = wb_receiver_get_signal_strength(receiver);
       
       //should be x and z position (y is up)
       double x = message_direction[0];
@@ -347,7 +347,7 @@ void process_received_ping_messages(void)
          send_ping_robot(other_robot_id);
          
       }
-      wb_receiver_next_packet(receiver2);
+      wb_receiver_next_packet(receiver);
    }
 }
 

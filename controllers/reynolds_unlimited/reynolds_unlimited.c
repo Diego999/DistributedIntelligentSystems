@@ -59,8 +59,8 @@ static void reset()
 {
 	wb_robot_init();
 
-	receiver2 = wb_robot_get_device("receiver2");
-	emitter2 = wb_robot_get_device("emitter2");
+	receiver2 = wb_robot_get_device("receiver");
+	emitter2 = wb_robot_get_device("emitter");
 	
 	
 	int i;

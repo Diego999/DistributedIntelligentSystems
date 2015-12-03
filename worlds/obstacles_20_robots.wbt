@@ -581,12 +581,12 @@ DEF epuck0 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -2222,12 +2222,12 @@ DEF epuck1 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -3851,12 +3851,12 @@ DEF epuck2 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -5480,12 +5480,12 @@ DEF epuck3 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -7109,12 +7109,12 @@ DEF epuck4 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -8750,12 +8750,12 @@ DEF epuck5 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -10391,12 +10391,12 @@ DEF epuck6 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -12032,12 +12032,12 @@ DEF epuck7 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -13673,12 +13673,12 @@ DEF epuck8 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -15314,12 +15314,12 @@ DEF epuck9 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -16955,12 +16955,12 @@ DEF epuck10 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -18596,12 +18596,12 @@ DEF epuck11 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -20237,12 +20237,12 @@ DEF epuck12 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -21878,12 +21878,12 @@ DEF epuck13 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -23519,12 +23519,12 @@ DEF epuck14 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -25160,12 +25160,12 @@ DEF epuck15 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -26801,12 +26801,12 @@ DEF epuck16 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -28442,12 +28442,12 @@ DEF epuck17 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -30083,12 +30083,12 @@ DEF epuck18 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
@@ -31724,12 +31724,12 @@ DEF epuck19 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver2"
+      name "receiver"
       type "infra-red"
       channel 1
     }
     DEF emitter Emitter {
-      name "emitter2"
+      name "emitter"
       type "infra-red"
       range 0.2
       channel 1
