@@ -33,7 +33,9 @@
 
 #define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
 
-int e_puck_matrix[16] = {17,29,34,10,8,-38,-56,-76,-72,-58,-36,8,10,36,28,18}; // for obstacle avoidance
+//weigths for the braientberg
+int braiten_weight[16] = {17,  29,  34,  10, 8,  -38,-56, -76,
+                          -72, -58, -36, 8,  10, 36,  28, 18 };
 
 WbDeviceTag ds[NB_SENSORS];   // Handle for the infrared distance sensors
 WbDeviceTag receiver2;     // Handle for the receiver node
@@ -276,9 +278,9 @@ void process_received_ping_messages(void)
 {
     const double *message_direction;
     double message_rssi; // Received Signal Strength indicator
-   double theta;
-   double range;
-   char *inbuffer;   // Buffer for the receiver node
+    double theta;
+    double range;
+    char *inbuffer;   // Buffer for the receiver node
     int other_robot_id;
     unsigned int recv_timestamp;
    
@@ -366,8 +368,8 @@ int main(){
          max_sens = max_sens>distances[i]?max_sens:distances[i]; // Check if new highest sensor value
 
          // Weighted sum of distance sensor values for Braitenburg vehicle
-         bmsr += e_puck_matrix[i] * distances[i];
-         bmsl += e_puck_matrix[i+NB_SENSORS] * distances[i];
+         bmsr += braiten_weight[i] * distances[i];
+         bmsl += braiten_weight[i+NB_SENSORS] * distances[i];
         }
 
       // Adapt Braitenberg values (empirical tests)
