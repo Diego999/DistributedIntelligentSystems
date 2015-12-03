@@ -22,6 +22,7 @@
 #define WHEEL_RADIUS    0.0205     // Wheel radius (meters)
 #define DELTA_T         0.064   // Timestep (seconds)
 
+#define MAX_TIMEOUT     1000 //# of timestamp before we forget the position of a robot (we kick it out of the flock)
 
 #define RULE1_THRESHOLD   0.2    // Threshold to activate aggregation rule. default 0.20
 #define RULE1_WEIGHT      0.3  // Weight of aggregation rule. default 0.20
@@ -56,8 +57,7 @@ char robot_number[8];
 
 unsigned int timestamp[FLOCK_SIZE];
 
-int currentTimestamp;
-
+int maxTimestamp;
 
 /*
  * Reset the robot's devices and get its ID
@@ -79,7 +79,7 @@ static void reset()
    for(i=0; i<FLOCK_SIZE; i++) {
       timestamp[i] = 0;
    }
-   currentTimestamp = 1;
+   maxTimestamp = 1;
    
    robot_name=(char*) wb_robot_get_name();
    
@@ -187,8 +187,11 @@ void reynolds_rules() {
          // don't consider yourself for the average
          if (i != robot_id) 
          {
+            // don't take really old values
+            if( (maxTimestamp - timestamp[i]) < MAX_TIMEOUT ){
                rel_avg_speed[j] += relative_speed[i][j];
                rel_avg_loc[j] += relative_pos[i][j];
+            }
          }        
       }
    }
@@ -262,7 +265,7 @@ void send_ping_robot(int other_robot_id){
 */
 void send_ping_all(void){
    //send my position
-   timestamp[robot_id] = currentTimestamp+1;
+   timestamp[robot_id] = maxTimestamp+1;
    send_ping_robot(robot_id);
       
    int i = 0;
@@ -311,8 +314,8 @@ void process_received_ping_messages(void)
       //only update the position if there is something new
       if(timestamp[other_robot_id] < recv_timestamp){
          
-         if(currentTimestamp < recv_timestamp){
-            currentTimestamp = recv_timestamp;
+         if(maxTimestamp < recv_timestamp){
+            maxTimestamp = recv_timestamp;
          }
          
          float relativ_pos_x = 0.0f;
