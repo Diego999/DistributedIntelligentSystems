@@ -37,6 +37,11 @@ float loc_old[FLOCK_SIZE][3];
 #define END_CLUSTER_IDX         SIZE_MAX_CLUSTER
 #define DH                      0.01
 #define H_MAX                   5.00
+//weights for the performance calculation
+#define W_O    1.0   //orientation
+#define W_C    1.0   //cohesion
+#define W_V    1.0   //velocity
+#define W_S    1.0   //entropy
 
 int clusters[NB_MAX_CLUSTER][SIZE_MAX_CLUSTER]; //+1 because we want to add END_CLUSTER_IDX
 float dist_robot[FLOCK_SIZE][FLOCK_SIZE];
@@ -283,6 +288,27 @@ void compute_fitness_S(float* fit) {
     *fit = res;
 }
 
+float instant_perf(){
+   float fit_O = 0.0f;
+   float fit_C = 0.0f;
+   float fit_V = 0.0f;
+   float fit_S = 0.0f;
+   
+   // compute the orientation metric
+   compute_fitness_O(& fit_O);
+
+   // compute the cohesion metric
+   compute_fitness_C(& fit_C);
+
+   // compute the velocity metric
+   compute_fitness_V(& fit_V);
+
+   // compute entropy metric
+   compute_fitness_S(& fit_S);
+   
+   return W_O*fit_O * W_C*fit_C * W_V*fit_V * W_S*fit_S;
+}
+
 /*
  * Main function.
  */
@@ -297,7 +323,9 @@ int main(int argc, char *args[]) {
     float fit_C;
     float fit_V;
     float fit_P;
-	float fit_S;
+	 float fit_S;
+	 float perf_sum = 0.0f;
+	 int nb_measur = 0; //number of measurment of instant perf
 
 	for(;;) {
 		wb_robot_step(TIME_STEP);
@@ -309,12 +337,12 @@ int main(int argc, char *args[]) {
                 loc_old[i][1] = loc[i][1];
                 loc_old[i][2] = loc[i][2];
                 // initialize current position
-				loc[i][0] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[0];
-				loc[i][1] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[2];
-				loc[i][2] = wb_supervisor_field_get_sf_rotation(robs_rotation[i])[3];
+				   loc[i][0] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[0];
+				   loc[i][1] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[2];
+				   loc[i][2] = wb_supervisor_field_get_sf_rotation(robs_rotation[i])[3];
             }
             // compute the orientation metric
-			compute_fitness_O(& fit_O);
+			   compute_fitness_O(& fit_O);
             
             // compute the cohesion metric
             compute_fitness_C(& fit_C);
@@ -326,11 +354,20 @@ int main(int argc, char *args[]) {
             compute_fitness_S(& fit_S);
 
             // compute total metric value
-            fit_P = fit_O * fit_C * fit_V;
+            fit_P = instant_perf();
             
             // Display fitness
-			printf("time : %d, orientation , cohesion , velocity , entropy : %.4lf, %.4lf, %.4lf, %.4lf\n", t, fit_O, fit_C, fit_V, fit_S);
+			   printf("time : %d, orientation , cohesion , velocity , entropy, instant perf : %.4lf, %.4lf, %.4lf, %.4lf, %.4lf\n", t, fit_O, fit_C, fit_V, fit_S, fit_P);
             
+            //avoid wrong values
+            if(fit_P > 0){
+               perf_sum += fit_P;
+               nb_measur++;
+            }
+		}
+		
+		if (t % 1000 == 0){
+		   printf("time : %d, overall perf : %.4lf\n", t, perf_sum/nb_measur);
 		}
 		
 		t += TIME_STEP;
