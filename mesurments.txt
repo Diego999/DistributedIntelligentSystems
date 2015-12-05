@@ -38,5 +38,13 @@ overall performance after  4 min
 
 
 
-=================DEATHPATH 2000
-todo
+=================DEATHPATH 2000 (after 5 min)
+------reynolds limited (high variance due to shit braitenberg)
+0.0213
+0.0175
+0.0262
+
+------paper unlimited
+0.0074
+0.0042
+0.0052
