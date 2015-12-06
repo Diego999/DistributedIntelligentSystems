@@ -454,15 +454,19 @@ void calc_fitness(double weights[ROBOTS][DATASIZE], double fit[ROBOTS], int its,
     }
     printf("hh\n");
     /* Wait for response */
-    while (wb_receiver_get_queue_length(rec[0]) == 0)
-        wb_robot_step(64);
+    //why need response from robots?!?
+    //while (wb_receiver_get_queue_length(rec[0]) == 0)
+    //    wb_robot_step(64);
+
+
     printf("ii\n");
     /* Get fitness values */
-    for (i=0;i<numRobs;i++) {
-        rbuffer = (double *)wb_receiver_get_data(rec[i]);
-        fit[i] = rbuffer[0];
-        wb_receiver_next_packet(rec[i]);
-        }
+    //isnt the supervisor the one calculating the fitness values
+    //for (i=0;i<numRobs;i++) {
+    //    rbuffer = (double *)wb_receiver_get_data(rec[i]);
+    //    fit[i] = rbuffer[0];
+    //    wb_receiver_next_packet(rec[i]);
+    //    }
 }
 
     // Evolution fitness function

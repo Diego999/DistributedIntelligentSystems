@@ -52,6 +52,7 @@ double good_w[DATASIZE] = {-11.15, -16.93, -8.20, -18.11, -17.99, 8.55, -8.89, 3
 WbDeviceTag ds[NB_SENSORS];   // Handle for the infrared distance sensors
 WbDeviceTag receiver;     // Handle for the receiver node
 WbDeviceTag emitter;      // Handle for the emitter node
+WbDeviceTag receiver0;     // Handle for the receiver node
 
 int robot_id_u, robot_id;  // Unique and normalized (between 0 and FLOCK_SIZE-1) robot ID
 
@@ -103,8 +104,10 @@ static void reset()
    sprintf(robot_number, "%d", robot_id_u);
    
    receiver = wb_robot_get_device("receiver");
+   receiver0 = wb_robot_get_device("receiver0");
    emitter = wb_robot_get_device("emitter");
    wb_receiver_enable(receiver,32);
+   wb_receiver_enable(receiver0,32);
    
    for(i=0; i<FLOCK_SIZE; i++) {
       initialized[i] = 0;       // Set initialization to 0 (= not yet initialized)
@@ -394,11 +397,12 @@ int main(){
       max_sens = 0;
                 
       // Wait for data
-      printf("%d\n", wb_receiver_get_queue_length(receiver));
-      while (wb_receiver_get_queue_length(receiver) == 0) {
+      printf("%d\n", wb_receiver_get_queue_length(receiver0));
+      while (wb_receiver_get_queue_length(receiver0) == 0) {
          wb_robot_step(64);
       }
-      rbuffer = (double *)wb_receiver_get_data(receiver);
+      printf("received message from controller\n");
+      rbuffer = (double *)wb_receiver_get_data(receiver0);
 
 
       for(i=0;i<NB_SENSORS;i++) {
@@ -449,7 +453,7 @@ int main(){
       } else {
          fit = fitfunc(rbuffer,rbuffer[DATASIZE], msl, msr);
          buffer[0] = fit;
-         wb_emitter_send(emitter,(void *)buffer,sizeof(double));
+         //wb_emitter_send(emitter,(void *)buffer,sizeof(double));
       }
 
       wb_receiver_next_packet(receiver);
