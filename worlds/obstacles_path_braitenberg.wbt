@@ -1267,23 +1267,23 @@ Supervisor {
     }
     DEF receiver0 Receiver {
       name "receiver0"
-      channel 1
+      channel 3
     }
     DEF receiver1 Receiver {
       name "receiver1"
-      channel 3
+      channel 5
     }
     DEF receiver2 Receiver {
       name "receiver2"
-      channel 5
+      channel 7
     }
     DEF receiver3 Receiver {
       name "receiver3"
-      channel 7
+      channel 9
     }
     DEF receiver4 Receiver {
       name "receiver4"
-      channel 9
+      channel 11
     }
   ]
   name "super1"
@@ -1303,6 +1303,7 @@ DEF epuck0 DifferentialWheels {
       type "infra-red"
       range 0.2
       byteSize 32
+      channel 1
     }
     DEF receiver0 Receiver {
       name "receiver0"
@@ -1310,6 +1311,10 @@ DEF epuck0 DifferentialWheels {
     }
     DEF compass Compass {
       name "compass2"
+    }
+    DEF emitter0 Emitter {
+      name "emitter0"
+      channel 3
     }
     DEF EPUCK_LEFT_WHEEL Solid {
       translation -0.026 0.02 0
@@ -2953,6 +2958,11 @@ DEF epuck1 DifferentialWheels {
       name "receiver0"
       channel 4
     }
+
+    DEF emitter0 Emitter {
+      name "emitter0"
+      channel 5
+    }
     DEF compass Compass {
       name "compass2"
     }
@@ -4585,6 +4595,11 @@ DEF epuck2 DifferentialWheels {
     DEF receiver0 Receiver {
       name "receiver0"
       channel 6
+    }
+
+    DEF emitter0 Emitter {
+      name "emitter0"
+      channel 7
     }
     DEF compass Compass {
       name "compass2"
@@ -6219,6 +6234,11 @@ DEF epuck3 DifferentialWheels {
       name "receiver0"
       channel 8
     }
+
+    DEF emitter0 Emitter {
+      name "emitter0"
+      channel 9
+    }
     DEF compass Compass {
       name "compass2"
     }
@@ -7851,6 +7871,11 @@ DEF epuck4 DifferentialWheels {
     DEF receiver0 Receiver {
       name "receiver0"
       channel 10
+    }
+
+    DEF emitter0 Emitter {
+      name "emitter0"
+      channel 11
     }
     DEF compass Compass {
       name "compass2"

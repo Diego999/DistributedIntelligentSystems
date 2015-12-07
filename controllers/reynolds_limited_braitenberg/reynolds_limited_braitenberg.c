@@ -41,6 +41,8 @@
 
 #define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
 
+#define NB_STEPS  10
+
 //weigths for the braientberg
 int braiten_weight[16] = {17,  29,  34,  10, 8,  -38,-56, -76, //left
                           -72, -58, -36, 8,  10, 36,  28, 18 }; //right
@@ -52,6 +54,7 @@ double good_w[DATASIZE] = {-11.15, -16.93, -8.20, -18.11, -17.99, 8.55, -8.89, 3
 WbDeviceTag ds[NB_SENSORS];   // Handle for the infrared distance sensors
 WbDeviceTag receiver;     // Handle for the receiver node
 WbDeviceTag emitter;      // Handle for the emitter node
+WbDeviceTag emitter0;      // Handle for the emitter node
 WbDeviceTag receiver0;     // Handle for the receiver node
 
 int robot_id_u, robot_id;  // Unique and normalized (between 0 and FLOCK_SIZE-1) robot ID
@@ -106,6 +109,8 @@ static void reset()
    receiver = wb_robot_get_device("receiver");
    receiver0 = wb_robot_get_device("receiver0");
    emitter = wb_robot_get_device("emitter");
+   emitter0 = wb_robot_get_device("emitter0");
+
    wb_receiver_enable(receiver,32);
    wb_receiver_enable(receiver0,32);
    
@@ -116,7 +121,7 @@ static void reset()
     printf("Reset: robot %s\n",robot_number);
 }
 
-double fitfunc(double[],int, int, int);
+void braitenberg(double[],int, int, int);
 
 /*
  * Keep given int number within interval {-limit, limit}
@@ -373,12 +378,11 @@ void process_received_ping_messages(void)
 int main(){ 
    int msl, msr;        // Wheel speeds
    int bmsl, bmsr, sum_sensors;  // Braitenberg parameters
-   int i;            // Loop counter
+   int i, j;            // Loop counter
    int distances[NB_SENSORS]; // Array for the distance sensor readings
    int max_sens;        // Store highest sensor value
-   double buffer[255];
    double *rbuffer;
-   double fit;
+   double buffer[255];
 
    wb_robot_init();
    reset();       // Resetting the robot
@@ -397,65 +401,66 @@ int main(){
       max_sens = 0;
                 
       // Wait for data
-      printf("%d\n", wb_receiver_get_queue_length(receiver0));
+
       while (wb_receiver_get_queue_length(receiver0) == 0) {
+         //printf("DOING SHIT\n");
          wb_robot_step(64);
       }
-      printf("received message from controller\n");
+
+      //printf("received message from controller\n");
       rbuffer = (double *)wb_receiver_get_data(receiver0);
 
+      for(j = 0; j < NB_STEPS; ++j) {
+         for(i=0;i<NB_SENSORS;i++) {
+            distances[i]=wb_distance_sensor_get_value(ds[i]); //Read sensor values
+            sum_sensors += distances[i]; // Add up sensor values
+            max_sens = max_sens>distances[i]?max_sens:distances[i]; // Check if new highest sensor value
+         }
 
-      for(i=0;i<NB_SENSORS;i++) {
-         distances[i]=wb_distance_sensor_get_value(ds[i]); //Read sensor values
-         sum_sensors += distances[i]; // Add up sensor values
-         max_sens = max_sens>distances[i]?max_sens:distances[i]; // Check if new highest sensor value
+         /* Send and get information */
+         timestamp[robot_id]++;
+         send_ping_robot(robot_id); 
+
+         process_received_ping_messages();
+
+         //printf("ROBOT %d: wheels %d, %d\n", robot_id, bmsl, bmsr);
+
+         // Compute self position
+         prev_my_position[0] = my_position[0];
+         prev_my_position[1] = my_position[1];
+
+         update_self_motion(msl,msr);
+
+         speed[robot_id][0] = (1/DELTA_T)*(my_position[0]-prev_my_position[0]);
+         speed[robot_id][1] = (1/DELTA_T)*(my_position[1]-prev_my_position[1]);
+
+         // Reynold's rules with all previous info (updates the speed[][] table)
+         reynolds_rules();
+
+         //printf("ROBOT %d: wanted position: %f, %f\n", robot_id, speed[robot_id][0], speed[robot_id][1]);
+
+         // Compute wheels speed from reynold's speed
+         compute_wheel_speeds(&msl, &msr);
+
+         //printf("wheels: %d, %d\n", msl, msr);
+
+         // Adapt speed instinct to distance sensor values
+         if (sum_sensors > NB_SENSORS*MIN_SENS) {
+         msl -= msl*max_sens/(2*MAX_SENS);
+         msr -= msr*max_sens/(2*MAX_SENS);
+         }
+
+         // Check for pre-programmed avoidance behavior
+         if (rbuffer[DATASIZE] == -1.0) {
+            braiten = 1;
+            braitenberg(good_w, 100, msl, msr);
+
+            // Otherwise, run provided controller
+         } else {
+            braitenberg(rbuffer,100, msl, msr);
+         }
       }
-
-      /* Send and get information */
-      timestamp[robot_id]++;
-      send_ping_robot(robot_id); 
-
-      process_received_ping_messages();
-
-      //printf("ROBOT %d: wheels %d, %d\n", robot_id, bmsl, bmsr);
-
-      // Compute self position
-      prev_my_position[0] = my_position[0];
-      prev_my_position[1] = my_position[1];
-
-      update_self_motion(msl,msr);
-
-      speed[robot_id][0] = (1/DELTA_T)*(my_position[0]-prev_my_position[0]);
-      speed[robot_id][1] = (1/DELTA_T)*(my_position[1]-prev_my_position[1]);
-
-      // Reynold's rules with all previous info (updates the speed[][] table)
-      reynolds_rules();
-
-      //printf("ROBOT %d: wanted position: %f, %f\n", robot_id, speed[robot_id][0], speed[robot_id][1]);
-
-      // Compute wheels speed from reynold's speed
-      compute_wheel_speeds(&msl, &msr);
-
-      //printf("wheels: %d, %d\n", msl, msr);
-
-      // Adapt speed instinct to distance sensor values
-      if (sum_sensors > NB_SENSORS*MIN_SENS) {
-      msl -= msl*max_sens/(2*MAX_SENS);
-      msr -= msr*max_sens/(2*MAX_SENS);
-      }
-
-      // Check for pre-programmed avoidance behavior
-      if (rbuffer[DATASIZE] == -1.0) {
-         braiten = 1;
-         fitfunc(good_w,100, msl, msr);
-
-         // Otherwise, run provided controller
-      } else {
-         fit = fitfunc(rbuffer,rbuffer[DATASIZE], msl, msr);
-         buffer[0] = fit;
-         //wb_emitter_send(emitter,(void *)buffer,sizeof(double));
-      }
-
+      wb_emitter_send(emitter0,(void *)buffer,sizeof(double));
       wb_receiver_next_packet(receiver);
    }
 }  
@@ -489,8 +494,7 @@ double s(double v) {
       return 1.0/(1.0 + exp(-1*v));
 }
 
-// Find the fitness for obstacle avoidance of the passed controller
-double fitfunc(double weights[DATASIZE],int its, int msl, int msr) {
+void braitenberg(double weights[DATASIZE],int its, int msl, int msr) {
    double left_speed,right_speed; // Wheel speeds
    double old_left, old_right; // Previous wheel speeds (for recursion)
    int left_encoder,right_encoder;
@@ -498,19 +502,12 @@ double fitfunc(double weights[DATASIZE],int its, int msl, int msr) {
    int i,j;
 
    // Fitness variables
-   double fit_speed;           // Speed aspect of fitness
-   double fit_diff;            // Speed difference between wheels aspect of fitness
-   double fit_sens;            // Proximity sensing aspect of fitness
    double sens_val[NB_SENSOR]; // Average values for each proximity sensor
-   double fitness;             // Fitness of controller
 
-   // Initially no fitness measurements
-   fit_speed = 0.0;
-   fit_diff = 0.0;
    for (i=0;i<NB_SENSOR;i++) {
       sens_val[i] = 0.0;
    }
-   fit_sens = 0.0;
+
    old_left = 0.0;
    old_right = 0.0;
 
@@ -576,31 +573,6 @@ double fitfunc(double weights[DATASIZE],int its, int msl, int msr) {
       // Set the motor speeds
       wb_differential_wheels_set_speed((int)left_speed,(int)right_speed); 
       wb_robot_step(128); // run one step
-
-      // Get current fitness value
-
-      // Average speed
-      fit_speed += (fabs(left_speed) + fabs(right_speed))/(2.0*MAX_SPEED);
-      // Difference in speed
-      fit_diff += fabs(left_speed - right_speed)/MAX_DIFF;
-      // Sensor values
-      for (i=0;i<NB_SENSOR;i++) {
-         sens_val[i] += ds_value[i]/MAX_SENS;
-      }
    }
-
-   // Find most active sensor
-   for (i=0;i<NB_SENSOR;i++) {
-     if (sens_val[i] > fit_sens) fit_sens = sens_val[i];
-   }
-   // Average values over all steps
-   fit_speed /= its;
-   fit_diff /= its;
-   fit_sens /= its;
-
-   // Better fitness should be higher
-   fitness = fit_speed*(1.0 - sqrt(fit_diff))*(1.0 - fit_sens);
-
-   return fitness;
-   }
+}
 

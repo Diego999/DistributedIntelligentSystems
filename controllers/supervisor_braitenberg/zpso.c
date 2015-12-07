@@ -81,9 +81,9 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
     }
 
     // Best performances are initially current performances
-    printf("aa\n");
+    
     findPerformance(swarm,perf,NULL,EVOLVE,robots,neighbors);
-    printf("bb\n");
+    
     for (i = 0; i < swarmsize; i++) {
         lbestperf[i] = perf[i];
         lbestage[i] = 1.0;                    // One performance so far
@@ -96,7 +96,7 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
     // Run optimization
     for (k = 0; k < iterations; k++) {
 
-    printf("Iteration %d\n",k);
+    //printf("Iteration %d\n",k);
     sprintf(label, "Iteration: %d",k+1);
     wb_supervisor_set_label(0,label,0.01,0.01,0.1,0xffffff,0);
     // Update preferences and generate new particles
@@ -108,25 +108,23 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
             swarm[i][j] += v[i][j];
         }
     }
-    printf("a\n");
+    
     // RE-EVALUATE PERFORMANCES OF PREVIOUS BESTS
     #if NOISY == 1
         findPerformance(lbest,lbestperf,lbestage,EVOLVE_AVG,robots,neighbors);
     #endif  
-    printf("b\n");
+    
     // Find new performance
     findPerformance(swarm,perf,NULL,EVOLVE,robots,neighbors);
-    printf("c\n");
+    
     // Update best local performance
     updateLocalPerf(swarm,perf,lbest,lbestperf,lbestage);
-    printf("d\n");
+    
     // Update best neighborhood performance
     updateNBPerf(lbest,lbestperf,nbbest,nbbestperf,neighbors);
 
     double temp[datasize];
     bestperf = bestResult(lbest,lbestperf,temp);
-    printf("%f\n",bestperf);
-
     }
 
     // Find best result achieved
@@ -150,39 +148,29 @@ double rnd(void) {
 void findPerformance(double swarm[swarmsize][datasize], double perf[swarmsize], 
              double age[swarmsize], char type, int robots, 
              int neighbors[swarmsize][swarmsize]) {
-    double particles[robots][datasize];
-    double fit[robots];
-    int i,j,k;                   // FOR-loop counters
+    double particles[datasize];
+    double fit;
+    int i,k;                   // FOR-loop counters
 
-    for (i = 0; i < swarmsize; i+=robots) {
-        for (j=0;j<robots && i+j<swarmsize;j++) {
-            for (k=0;k<datasize;k++) 
-                particles[j][k] = swarm[i+j][k];
-        }
+    for (i = 0; i < swarmsize; ++i) {
+        for (k=0;k<datasize;k++) 
+            particles[k] = swarm[i][k];
 
         if (type == EVOLVE_AVG) {
             // Evalute current fitness
-            fitness(particles,fit,neighbors);
-            for (j=0;j<robots && i+j<swarmsize;j++) {
-                perf[i+j] = (perf[i+j]*(age[i+j]-1)+fit[j])/age[i+j];
-                age[i+j]++;
-            }
+            fitness(particles,&fit,neighbors);
+            perf[i] = (perf[i]*(age[i]-1)+fit)/age[i];
+            age[i]++;
         } else if (type == EVOLVE) {
-            printf("ee\n");
-        fitness(particles,fit,neighbors);
-            for (j=0;j<robots && i+j<swarmsize;j++)
-                perf[i+j] = fit[j];
+        	fitness(particles,&fit,neighbors);
+            perf[i] = fit;
         } else if (type == SELECT) {
-            for (j=0;j<robots && i+j<swarmsize;j++)
-                perf[i+j] = 0.0;
+            perf[i] = 0.0;
             for (k=0;k<5;k++) {
-                fitness(particles,fit,neighbors);
-                for (j=0;j<robots && i+j<swarmsize;j++)
-                    perf[i+j] += fit[j];
+                fitness(particles,&fit,neighbors);
+                perf[i] += fit;
             }
-            for (j=0;j<robots && i+j<swarmsize;j++) {
-                perf[i+j] /= 5.0;
-            }
+            perf[i] /= 5.0;
         }
     }
 }
