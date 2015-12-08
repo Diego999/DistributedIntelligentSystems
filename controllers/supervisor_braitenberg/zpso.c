@@ -81,9 +81,9 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
     }
 
     // Best performances are initially current performances
-    
+    printf("F\n");
     findPerformance(swarm,perf,NULL,EVOLVE,robots,neighbors);
-    
+    printf("G\n");
     for (i = 0; i < swarmsize; i++) {
         lbestperf[i] = perf[i];
         lbestage[i] = 1.0;                    // One performance so far
@@ -96,7 +96,7 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
     // Run optimization
     for (k = 0; k < iterations; k++) {
 
-    //printf("Iteration %d\n",k);
+    printf("Iteration %d\n",k);
     sprintf(label, "Iteration: %d",k+1);
     wb_supervisor_set_label(0,label,0.01,0.01,0.1,0xffffff,0);
     // Update preferences and generate new particles
@@ -109,14 +109,10 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
         }
     }
     
-    // RE-EVALUATE PERFORMANCES OF PREVIOUS BESTS
-    #if NOISY == 1
-        findPerformance(lbest,lbestperf,lbestage,EVOLVE_AVG,robots,neighbors);
-    #endif  
-    
     // Find new performance
+    printf("H\n");
     findPerformance(swarm,perf,NULL,EVOLVE,robots,neighbors);
-    
+    printf("I\n");
     // Update best local performance
     updateLocalPerf(swarm,perf,lbest,lbestperf,lbestage);
     
@@ -130,7 +126,9 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
     // Find best result achieved
     double* best;
     best = malloc(sizeof(double)*datasize);
+    printf("J\n");
     findPerformance(lbest,lbestperf,NULL,SELECT,robots,neighbors);
+    printf("K\n");
     bestperf = bestResult(lbest,lbestperf,best);
 
     printf("Best performance found\n");

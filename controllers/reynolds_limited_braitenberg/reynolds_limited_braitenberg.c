@@ -41,7 +41,7 @@
 
 #define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
 
-#define NB_STEPS  10
+#define NB_STEPS  5
 
 //weigths for the braientberg
 int braiten_weight[16] = {17,  29,  34,  10, 8,  -38,-56, -76, //left
@@ -403,7 +403,6 @@ int main(){
       // Wait for data
 
       while (wb_receiver_get_queue_length(receiver0) == 0) {
-         //printf("DOING SHIT\n");
          wb_robot_step(64);
       }
 
@@ -453,11 +452,11 @@ int main(){
          // Check for pre-programmed avoidance behavior
          if (rbuffer[DATASIZE] == -1.0) {
             braiten = 1;
-            braitenberg(good_w, 100, msl, msr);
+            braitenberg(good_w, 50, msl, msr);
 
             // Otherwise, run provided controller
          } else {
-            braitenberg(rbuffer,100, msl, msr);
+            braitenberg(rbuffer,50, msl, msr);
          }
       }
       wb_emitter_send(emitter0,(void *)buffer,sizeof(double));
@@ -514,7 +513,7 @@ void braitenberg(double weights[DATASIZE],int its, int msl, int msr) {
    // Evaluate fitness repeatedly
    for (j=0;j<its;j++) {
       if (braiten) j--;            // Loop forever
-
+      
       ds_value[0] = (double) wb_distance_sensor_get_value(ds[0]);
       ds_value[1] = (double) wb_distance_sensor_get_value(ds[1]);
       ds_value[2] = (double) wb_distance_sensor_get_value(ds[2]);

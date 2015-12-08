@@ -346,16 +346,17 @@ float instant_perf(){
    
    // compute the orientation metric
    compute_fitness_O(& fit_O);
-
+   
    // compute the cohesion metric
    compute_fitness_C(& fit_C);
-
+   
    // compute the velocity metric
    compute_fitness_V(& fit_V);
 
    // compute entropy metric
    compute_fitness_S(& fit_S);
-   
+
+   //printf("Result %f * %f * %f * %f = %f\n", W_O*fit_O , W_C*fit_C , W_V*fit_V , W_S*fit_S, W_O*fit_O * W_C*fit_C * W_V*fit_V * W_S*fit_S);
    return W_O*fit_O * W_C*fit_C * W_V*fit_V * W_S*fit_S;
 }
 
@@ -367,7 +368,6 @@ int main(int argc, char *args[]) {
     double *weights;                         // Evolved result
     double buffer[255];
     int i,j,k;
-    double* rbuffer;
 
     wb_robot_init();
     printf("Particle Swarm Optimization Super Controller\n");
@@ -384,9 +384,7 @@ int main(int argc, char *args[]) {
     endfit = 0.0;
     bestfit = 0.0;
     for (j=0;j<10;j++) {
-	    for(i = 0; i < FLOCK_SIZE; ++i)
-	    	random_pos(i);
-
+	    
         /* Get result of evolution */
         weights = pso(SWARMSIZE,NB,LWEIGHT,NBWEIGHT,VMAX,MININIT,MAXINIT,ITS,DATASIZE,ROBOTS);
         
@@ -412,22 +410,6 @@ int main(int argc, char *args[]) {
 	    for (i=0;i<DATASIZE;i++) {
 	        buffer[i] = bestw[i];
 	    }
-	    buffer[DATASIZE] = 1000000;
-	    for (i=0;i<ROBOTS;i++) {
-	        wb_emitter_send(emitter[i],(void *)buffer,(DATASIZE+1)*sizeof(double));
-	    }
-
-
-	      /* Wait for response */
-		  while (wb_receiver_get_queue_length(rec[0]) == 0) {
-		    wb_robot_step(64);
-		}
-
-		  /* Get fitness values */
-		  for (i=0;i<FLOCK_SIZE;i++) {
-		    rbuffer = (double *)wb_receiver_get_data(rec[i]);
-		    wb_receiver_next_packet(rec[i]);
-		  }
     }
     //printf("Average performance: %.3f\n",endfit);
 
@@ -444,19 +426,50 @@ void random_pos(int rob_id) {
 // Distribute fitness functions among robots
 void calc_fitness(double weights[DATASIZE], double* fit, int its, int numRobs) {
     double buffer[255];
-    int i,j;
-    
+    int i;
+    double perf = 0;
+    int nbMeasure = 0;
+    double* rbuffer;
+    double local_perf = 0;
+
     /* Send data to robots */
-    for (i=0;i<numRobs;i++) {
-        random_pos(i);
-        for (j=0;j<DATASIZE;j++) {
-            buffer[j] = weights[j];
-        }
-        buffer[DATASIZE] = its;
+    for(i = 0; i < FLOCK_SIZE; ++i)
+	   	random_pos(i);
+
+	buffer[DATASIZE] = 1000000;
+    for (i=0;i<ROBOTS;i++) {
         wb_emitter_send(emitter[i],(void *)buffer,(DATASIZE+1)*sizeof(double));
     }
 
-    *fit = instant_perf();
+
+	  /* Wait for response */
+	  while (wb_receiver_get_queue_length(rec[0]) == 0) {
+	  	for (i=0;i<FLOCK_SIZE;i++) {
+	        // initialize old position
+	        loc_old[i][0] = loc[i][0];
+	        loc_old[i][1] = loc[i][1];
+	        loc_old[i][2] = loc[i][2];
+	        // initialize current position
+		    loc[i][0] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[0];
+		    loc[i][1] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[2];
+		    loc[i][2] = wb_supervisor_field_get_sf_rotation(robs_rotation[i])[3];
+	    }
+	    local_perf = instant_perf();
+	    if(local_perf > 0) {
+		  	perf += local_perf;
+		  	++nbMeasure;
+		  }
+	    wb_robot_step(64);
+	}
+	
+	  /* Get fitness values */
+	  for (i=0;i<FLOCK_SIZE;i++) {
+	    rbuffer = (double *)wb_receiver_get_data(rec[i]);
+	    wb_receiver_next_packet(rec[i]);
+	  }
+
+    *fit = perf / nbMeasure;
+    printf("%f\n",*fit);
 }
 
     // Evolution fitness function
