@@ -436,7 +436,11 @@ void calc_fitness(double weights[DATASIZE], double* fit, int its, int numRobs) {
     for(i = 0; i < FLOCK_SIZE; ++i)
 	   	random_pos(i);
 
-	buffer[DATASIZE] = 1000000;
+	/* Send best controller to robots */
+	for (i=0;i<DATASIZE;i++) {
+	    buffer[i] = weights[i];
+	}
+	buffer[DATASIZE] = 10000;
     for (i=0;i<ROBOTS;i++) {
         wb_emitter_send(emitter[i],(void *)buffer,(DATASIZE+1)*sizeof(double));
     }
@@ -461,7 +465,7 @@ void calc_fitness(double weights[DATASIZE], double* fit, int its, int numRobs) {
 		  }
 	    wb_robot_step(64);
 	}
-	
+
 	  /* Get fitness values */
 	  for (i=0;i<FLOCK_SIZE;i++) {
 	    rbuffer = (double *)wb_receiver_get_data(rec[i]);
@@ -469,7 +473,6 @@ void calc_fitness(double weights[DATASIZE], double* fit, int its, int numRobs) {
 	  }
 
     *fit = perf / nbMeasure;
-    printf("%f\n",*fit);
 }
 
     // Evolution fitness function
