@@ -1294,16 +1294,14 @@ DEF epuck0 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver"
       type "infra-red"
-      channel 0
+      channel 1
     }
     DEF emitter Emitter {
-      name "emitter"
       type "infra-red"
       range 0.2
-      byteSize 32
       channel 1
+      byteSize 32
     }
     DEF receiver0 Receiver {
       name "receiver0"
@@ -2943,22 +2941,19 @@ DEF epuck1 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver"
       type "infra-red"
-      channel 0
+      channel 1
     }
     DEF emitter Emitter {
-      name "emitter"
       type "infra-red"
       range 0.2
-      channel 3
+      channel 1
       byteSize 32
     }
     DEF receiver0 Receiver {
       name "receiver0"
       channel 4
     }
-
     DEF emitter0 Emitter {
       name "emitter0"
       channel 5
@@ -4581,22 +4576,19 @@ DEF epuck2 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver"
       type "infra-red"
-      channel 0
+      channel 1
     }
     DEF emitter Emitter {
-      name "emitter"
       type "infra-red"
       range 0.2
-      channel 5
+      channel 1
       byteSize 32
     }
     DEF receiver0 Receiver {
       name "receiver0"
       channel 6
     }
-
     DEF emitter0 Emitter {
       name "emitter0"
       channel 7
@@ -6219,22 +6211,19 @@ DEF epuck3 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver"
       type "infra-red"
-      channel 0
+      channel 1
     }
     DEF emitter Emitter {
-      name "emitter"
       type "infra-red"
       range 0.2
-      channel 7
+      channel 1
       byteSize 32
     }
     DEF receiver0 Receiver {
       name "receiver0"
       channel 8
     }
-
     DEF emitter0 Emitter {
       name "emitter0"
       channel 9
@@ -7857,22 +7846,19 @@ DEF epuck4 DifferentialWheels {
   rotation 0 1 0 -1.5708
   children [
     DEF receiver Receiver {
-      name "receiver"
       type "infra-red"
-      channel 0
+      channel 1
     }
     DEF emitter Emitter {
-      name "emitter"
       type "infra-red"
       range 0.2
-      channel 9
+      channel 1
       byteSize 32
     }
     DEF receiver0 Receiver {
       name "receiver0"
       channel 10
     }
-
     DEF emitter0 Emitter {
       name "emitter0"
       channel 11
