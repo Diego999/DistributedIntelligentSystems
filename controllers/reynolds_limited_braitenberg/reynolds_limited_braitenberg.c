@@ -461,7 +461,7 @@ void braitenberg(double weights[DATASIZE], int* msl, int* msr) {
    double ds_value[NB_SENSOR];
    int i;
    left_speed = right_speed = 0;
-int e_puck_matrix[16] = {17,29,34,10,8,-38,-56,-76,-72,-58,-36,8,10,36,28,18};
+   
       ds_value[0] = (double) wb_distance_sensor_get_value(ds[0]);
       ds_value[1] = (double) wb_distance_sensor_get_value(ds[1]);
       ds_value[2] = (double) wb_distance_sensor_get_value(ds[2]);
@@ -472,8 +472,8 @@ int e_puck_matrix[16] = {17,29,34,10,8,-38,-56,-76,-72,-58,-36,8,10,36,28,18};
       ds_value[7] = (double) wb_distance_sensor_get_value(ds[7]);
 
       for (i=0;i<NB_SENSOR;i++) {
-         left_speed += e_puck_matrix[i]*ds_value[i];
-         right_speed += e_puck_matrix[i+NB_SENSOR]*ds_value[i];
+         left_speed += weights[i]*ds_value[i];
+         right_speed += weights[i+NB_SENSOR]*ds_value[i];
       }
       left_speed /= MIN_SENS;
       right_speed /= MIN_SENS;
@@ -481,5 +481,8 @@ int e_puck_matrix[16] = {17,29,34,10,8,-38,-56,-76,-72,-58,-36,8,10,36,28,18};
      
       *msl += (int)left_speed;
       *msr += (int)right_speed;
+      
+   limit(msl,MAX_SPEED);
+   limit(msr,MAX_SPEED);
 }
 
