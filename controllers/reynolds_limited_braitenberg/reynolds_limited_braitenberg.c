@@ -418,8 +418,9 @@ int main(){
 
          /* Send and get information */
          timestamp[robot_id]++;
+         printf("SEND PIN\n");
          send_ping_robot(robot_id); 
-
+          
          process_received_ping_messages();
 
          //printf("ROBOT %d: wheels %d, %d\n", robot_id, bmsl, bmsr);
@@ -448,7 +449,9 @@ int main(){
          msl -= msl*max_sens/(2*MAX_SENS);
          msr -= msr*max_sens/(2*MAX_SENS);
          }
-
+          
+          printf("before\n");
+          
          // Check for pre-programmed avoidance behavior
          if (rbuffer[DATASIZE] == -1.0) {
             braiten = 1;
@@ -458,9 +461,12 @@ int main(){
          } else {
             braitenberg(rbuffer,50, msl, msr);
          }
+         printf("after\n");
       }
       wb_emitter_send(emitter0,(void *)buffer,sizeof(double));
+      
       wb_receiver_next_packet(receiver);
+      
    }
 }  
 
