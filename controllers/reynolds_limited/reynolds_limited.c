@@ -35,8 +35,8 @@
 #define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
 
 //weigths for the braientberg
-int braiten_weight[16] = {17,  29,  34,  10, 8,  -38,-56, -76, //left
-                          -72, -58, -36, 8,  10, 36,  28, 18 }; //right
+int braiten_weight[16] = {17,  30,  34,  0, 0,  -38, -55, -76, //left
+                          -72, -57, -36, 0, 0,   36,  29, 18 }; //right
 
 WbDeviceTag ds[NB_SENSORS];   // Handle for the infrared distance sensors
 WbDeviceTag receiver;     // Handle for the receiver node
@@ -359,7 +359,10 @@ int main(){
    int i;            // Loop counter
    int distances[NB_SENSORS]; // Array for the distance sensor readings
    int max_sens;        // Store highest sensor value
-   
+   int t = 0;
+   double prev_position_10[2];
+   float distance_moved = 0;
+   prev_position_10[0] = prev_position_10[1] = 0;
    reset();       // Resetting the robot
    
    for(i=0; i<FLOCK_SIZE; i++) {
@@ -371,6 +374,7 @@ int main(){
    
    // Forever
    for(;;){
+   ++t;
       bmsl = 0; bmsr = 0;
       sum_sensors = 0;
       max_sens = 0;
@@ -401,7 +405,15 @@ int main(){
       // Compute self position
       prev_my_position[0] = my_position[0];
       prev_my_position[1] = my_position[1];
+      if(t%5==0) {
+      distance_moved = sqrtf(pow(prev_position_10[0]-my_position[0], 2.0) + pow(prev_position_10[1]-my_position[1],2.0));
+      if(distance_moved < 1e-4)
       
+      printf("%d : %f\n", robot_id, distance_moved);
+      prev_position_10[0] = my_position[0];
+      prev_position_10[1] = my_position[1]; 
+      
+      }
       update_self_motion(msl,msr);
       
       speed[robot_id][0] = (1/DELTA_T)*(my_position[0]-prev_my_position[0]);
@@ -426,7 +438,25 @@ int main(){
       // Add Braitenberg
       msl += bmsl;
       msr += bmsr;
-                  
+      
+      if(t%5==0 && distance_moved < 1e-4) {
+        msl = bmsl;
+        msr = bmsr;      
+        wb_differential_wheels_set_speed(msl,msr);
+        for(i = 0; i < 2;++i) {
+          
+           
+           update_self_motion(msl, msr);
+           compute_wheel_speeds(&msl, &msr);
+           
+         prev_my_position[0] = my_position[0];
+         prev_my_position[1] = my_position[1];
+          speed[robot_id][0] = (1/DELTA_T)*(my_position[0]-prev_my_position[0]);
+          speed[robot_id][1] = (1/DELTA_T)*(my_position[1]-prev_my_position[1]);
+         wb_robot_step(TIME_STEP);
+         } 
+          
+      }    
       // Set speed
       wb_differential_wheels_set_speed(msl,msr);
     
