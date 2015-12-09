@@ -311,7 +311,7 @@ void process_received_ping_messages(void)
       double x = message_direction[0];
       double z = message_direction[2];
       
-      printf("ROBOT %d: message_direction: %f, %f, %f\n", robot_id, message_direction[0], message_direction[1], message_direction[2]);
+      //printf("ROBOT %d: message_direction: %f, %f, %f\n", robot_id, message_direction[0], message_direction[1], message_direction[2]);
       
       theta =  -atan2(z,x);
       theta = theta + my_position[2]; // find the relative theta;
@@ -321,7 +321,7 @@ void process_received_ping_messages(void)
       sscanf(inbuffer, "%d", &other_robot_id);
       sscanf( (inbuffer+8), "%u", &recv_timestamp);
       
-      printf("recieved: id%d, ts%d\n", other_robot_id, recv_timestamp);
+      //printf("recieved: id%d, ts%d\n", other_robot_id, recv_timestamp);
       
       //only update the position if there is something new
       if(timestamp[other_robot_id] < recv_timestamp){
@@ -409,7 +409,7 @@ int main(){
 
          /* Send and get information */
          timestamp[robot_id]++;
-         printf("SEND PIN\n");
+         //printf("SEND PIN\n");
          send_ping_robot(robot_id); 
           
          process_received_ping_messages();
