@@ -81,9 +81,9 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
     }
 
     // Best performances are initially current performances
-    printf("F\n");
+    printf("Find best performance of initialized swarm\n");
     findPerformance(swarm,perf,NULL,EVOLVE,robots,neighbors);
-    printf("G\n");
+    
     for (i = 0; i < swarmsize; i++) {
         lbestperf[i] = perf[i];
         lbestage[i] = 1.0;                    // One performance so far
@@ -106,13 +106,15 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
             v[i][j] += lweight*rnd()*(lbest[i][j] - swarm[i][j]) + nbweight*rnd()*(nbbest[i][j] - swarm[i][j]);
             v[i][j] *= 0.6;
             swarm[i][j] += v[i][j];
+            printf("%f ", swarm[i][j]);
         }
+        printf("\n");
     }
     
     // Find new performance
-    printf("H\n");
+    printf("Find best of the iteration %d\n", k+1);
     findPerformance(swarm,perf,NULL,EVOLVE,robots,neighbors);
-    printf("I\n");
+    
     // Update best local performance
     updateLocalPerf(swarm,perf,lbest,lbestperf,lbestage);
     
@@ -121,16 +123,16 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
 
     double temp[datasize];
     bestperf = bestResult(lbest,lbestperf,temp);
+    printf("Best perf of the iteration %d is %f\n", k+1, bestperf);
     }
 
     // Find best result achieved
     double* best;
     best = malloc(sizeof(double)*datasize);
-    printf("J\n");
+    printf("Find the best among all iterations\n");
     findPerformance(lbest,lbestperf,NULL,SELECT,robots,neighbors);
-    printf("K\n");
+    
     bestperf = bestResult(lbest,lbestperf,best);
-
     printf("Best performance found\n");
     printf("Performance: %f\n",bestperf);
 
@@ -151,7 +153,7 @@ void findPerformance(double swarm[swarmsize][datasize], double perf[swarmsize],
     int i,k;                   // FOR-loop counters
 
     for (i = 0; i < swarmsize; ++i) {
-        for (k=0;k<datasize;k++) 
+        for (k=0;k<datasize;k++)
             particles[k] = swarm[i][k];
 
         if (type == EVOLVE_AVG) {

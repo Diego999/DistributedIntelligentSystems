@@ -19,7 +19,7 @@
 #define TIME_STEP       64   // [ms] Length of time step
 #define MAX_ACC 800.0 // Maximum amount speed can change in 128 ms
 #define NB_SENSOR 8 // Number of proximity sensors
-#define DATASIZE 2*NB_SENSOR+6 // Number of elements in particle
+#define DATASIZE 2*NB_SENSOR // Number of elements in particle
 
 // Fitness definitions
 #define MAX_DIFF (2*MAX_SPEED) // Maximum difference between wheel speeds
@@ -41,15 +41,7 @@
 
 #define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
 
-#define NB_STEPS  5
-
-//weigths for the braientberg
-int braiten_weight[16] = {17,  29,  34,  10, 8,  -38,-56, -76, //left
-                          -72, -58, -36, 8,  10, 36,  28, 18 }; //right
-
-double good_w[DATASIZE] = {-11.15, -16.93, -8.20, -18.11, -17.99, 8.55, -8.89, 3.52, 29.74,
-              -7.48, 5.61, 11.16, -9.54, 4.58, 1.41, 2.09, 26.50, 23.11,
-              -3.44, -3.78, 23.20, 8.41};
+#define NB_STEPS  1000
 
 WbDeviceTag ds[NB_SENSORS];   // Handle for the infrared distance sensors
 WbDeviceTag receiver;     // Handle for the receiver node
@@ -73,8 +65,6 @@ char robot_number[8];
 unsigned int timestamp[FLOCK_SIZE];
 
 int maxTimestamp;
-
-int braiten;
 
 /*
  * Reset the robot's devices and get its ID
@@ -121,7 +111,7 @@ static void reset()
     printf("Reset: robot %s\n",robot_number);
 }
 
-void braitenberg(double[],int, int, int);
+void braitenberg(double[],int*, int*);
 
 /*
  * Keep given int number within interval {-limit, limit}
@@ -396,20 +386,21 @@ int main(){
    
    // Forever
    for(;;){
-      bmsl = 0; bmsr = 0;
-      sum_sensors = 0;
-      max_sens = 0;
-                
       // Wait for data
 
       while (wb_receiver_get_queue_length(receiver0) == 0) {
          wb_robot_step(64);
       }
-
       //printf("received message from controller\n");
       rbuffer = (double *)wb_receiver_get_data(receiver0);
-
+      //for(j = 0; j < DATASIZE; ++j)
+        //printf("%f ", rbuffer[j]);
+        //printf("\n");
       for(j = 0; j < NB_STEPS; ++j) {
+          msl = msr = 0;
+          bmsl = 0; bmsr = 0;
+          sum_sensors = 0;
+          max_sens = 0;
          for(i=0;i<NB_SENSORS;i++) {
             distances[i]=wb_distance_sensor_get_value(ds[i]); //Read sensor values
             sum_sensors += distances[i]; // Add up sensor values
@@ -449,19 +440,14 @@ int main(){
          msl -= msl*max_sens/(2*MAX_SENS);
          msr -= msr*max_sens/(2*MAX_SENS);
          }
-          
-          printf("before\n");
-          
-         // Check for pre-programmed avoidance behavior
-         if (rbuffer[DATASIZE] == -1.0) {
-            braiten = 1;
-            braitenberg(good_w, 50, msl, msr);
+         
+      braitenberg(rbuffer, &msl, &msr);
 
-            // Otherwise, run provided controller
-         } else {
-            braitenberg(rbuffer,50, msl, msr);
-         }
-         printf("after\n");
+               // Set speed
+      wb_differential_wheels_set_speed(msl,msr);
+    
+      // Continue one step
+      wb_robot_step(TIME_STEP);
       }
       wb_emitter_send(emitter0,(void *)buffer,sizeof(double));
       
@@ -470,56 +456,12 @@ int main(){
    }
 }  
 
-// Generate random number from 0 to 1
-double rnd() {
-   return (double)rand()/RAND_MAX;
-}
-
-// Generate Gaussian random number with 0 mean and 1 std
-double gauss(void) {
-   double x1, x2, w;
-
-   do {
-      x1 = 2.0 * rnd() - 1.0;
-      x2 = 2.0 * rnd() - 1.0;
-      w = x1*x1 + x2*x2;
-   } while (w >= 1.0);
-
-   w = sqrt((-2.0 * log(w))/w);
-   return(x1*w);
-}
-
-// S-function to transform v variable to [0,1]
-double s(double v) {
-   if (v > 5)
-      return 1.0;
-   else if (v < -5)
-      return 0.0;
-   else
-      return 1.0/(1.0 + exp(-1*v));
-}
-
-void braitenberg(double weights[DATASIZE],int its, int msl, int msr) {
+void braitenberg(double weights[DATASIZE], int* msl, int* msr) {
    double left_speed,right_speed; // Wheel speeds
-   double old_left, old_right; // Previous wheel speeds (for recursion)
-   int left_encoder,right_encoder;
    double ds_value[NB_SENSOR];
-   int i,j;
+   int i;
+   left_speed = right_speed = 0;
 
-   // Fitness variables
-   double sens_val[NB_SENSOR]; // Average values for each proximity sensor
-
-   for (i=0;i<NB_SENSOR;i++) {
-      sens_val[i] = 0.0;
-   }
-
-   old_left = 0.0;
-   old_right = 0.0;
-
-   // Evaluate fitness repeatedly
-   for (j=0;j<its;j++) {
-      if (braiten) j--;            // Loop forever
-      
       ds_value[0] = (double) wb_distance_sensor_get_value(ds[0]);
       ds_value[1] = (double) wb_distance_sensor_get_value(ds[1]);
       ds_value[2] = (double) wb_distance_sensor_get_value(ds[2]);
@@ -529,55 +471,15 @@ void braitenberg(double weights[DATASIZE],int its, int msl, int msr) {
       ds_value[6] = (double) wb_distance_sensor_get_value(ds[6]);
       ds_value[7] = (double) wb_distance_sensor_get_value(ds[7]);
 
-      // Feed proximity sensor values to neural net
-      left_speed = 0.0;
-      right_speed = 0.0;
       for (i=0;i<NB_SENSOR;i++) {
          left_speed += weights[i]*ds_value[i];
-         right_speed += weights[i+NB_SENSOR+1]*ds_value[i];
+         right_speed += weights[i+NB_SENSOR]*ds_value[i];
       }
-      left_speed /= 200.0;
-      right_speed /= 200.0;
+      left_speed /= MIN_SENS;
+      right_speed /= MIN_SENS;
 
-      left_speed += msl;
-      right_speed += msr;
-
-      // Add the recursive connections
-      left_speed += weights[2*NB_SENSOR+2]*(old_left+MAX_SPEED)/(2*MAX_SPEED);
-      left_speed += weights[2*NB_SENSOR+3]*(old_right+MAX_SPEED)/(2*MAX_SPEED);
-      right_speed += weights[2*NB_SENSOR+4]*(old_left+MAX_SPEED)/(2*MAX_SPEED);
-      right_speed += weights[2*NB_SENSOR+5]*(old_right+MAX_SPEED)/(2*MAX_SPEED);
-
-      // Add neural thresholds
-      left_speed += weights[NB_SENSOR];
-      right_speed += weights[2*NB_SENSOR+1];
-      // Apply neuron transform 
-      left_speed = MAX_SPEED*(2.0*s(left_speed)-1.0);
-      right_speed = MAX_SPEED*(2.0*s(right_speed)-1.0);
-
-      // Make sure we don't accelerate too fast
-      if (left_speed - old_left > MAX_ACC) left_speed = old_left+MAX_ACC;
-      if (left_speed - old_left < -MAX_ACC) left_speed = old_left-MAX_ACC;
-      if (right_speed - old_right > MAX_ACC) left_speed = old_right+MAX_ACC;
-      if (right_speed - old_right < -MAX_ACC) left_speed = old_right-MAX_ACC;
-
-      // Make sure speeds are within bounds
-      if (left_speed > MAX_SPEED) left_speed = MAX_SPEED;
-      if (left_speed < -1.0*MAX_SPEED) left_speed = -1.0*MAX_SPEED;
-      if (right_speed > MAX_SPEED) right_speed = MAX_SPEED;
-      if (right_speed < -1.0*MAX_SPEED) right_speed = -1.0*MAX_SPEED;
-
-      // Set new old speeds
-      old_left = left_speed;
-      old_right = right_speed;
-
-      left_encoder = wb_differential_wheels_get_left_encoder();
-      right_encoder = wb_differential_wheels_get_right_encoder();
-      if (left_encoder>9000) wb_differential_wheels_set_encoders(0,right_encoder);
-      if (right_encoder>1000) wb_differential_wheels_set_encoders(left_encoder,0);
-      // Set the motor speeds
-      wb_differential_wheels_set_speed((int)left_speed,(int)right_speed); 
-      wb_robot_step(128); // run one step
-   }
+     
+      *msl += (int)left_speed;
+      *msr += (int)right_speed;
 }
 
