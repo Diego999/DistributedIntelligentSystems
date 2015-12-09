@@ -41,7 +41,7 @@
 
 #define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
 
-#define NB_STEPS  1000
+#define NB_STEPS  5000
 
 WbDeviceTag ds[NB_SENSORS];   // Handle for the infrared distance sensors
 WbDeviceTag receiver;     // Handle for the receiver node
@@ -134,7 +134,7 @@ void update_self_motion(int msl, int msr) {
    float dl = (float)msl * SPEED_UNIT_RADS * WHEEL_RADIUS * DELTA_T;
    float du = (dr + dl)/2.0;
    float dtheta = (dr - dl)/AXLE_LENGTH;
-  
+    //printf("%d %f %f %f\n", msr, SPEED_UNIT_RADS, WHEEL_RADIUS, DELTA_T);
    // Compute deltas in the environment
    float dx = -du * sinf(theta);
    float dz = -du * cosf(theta);
@@ -397,7 +397,7 @@ int main(){
         //printf("%f ", rbuffer[j]);
         //printf("\n");
       for(j = 0; j < NB_STEPS; ++j) {
-          msl = msr = 0;
+          //msl = msr = 0;
           bmsl = 0; bmsr = 0;
           sum_sensors = 0;
           max_sens = 0;
@@ -461,7 +461,7 @@ void braitenberg(double weights[DATASIZE], int* msl, int* msr) {
    double ds_value[NB_SENSOR];
    int i;
    left_speed = right_speed = 0;
-
+int e_puck_matrix[16] = {17,29,34,10,8,-38,-56,-76,-72,-58,-36,8,10,36,28,18};
       ds_value[0] = (double) wb_distance_sensor_get_value(ds[0]);
       ds_value[1] = (double) wb_distance_sensor_get_value(ds[1]);
       ds_value[2] = (double) wb_distance_sensor_get_value(ds[2]);
@@ -472,8 +472,8 @@ void braitenberg(double weights[DATASIZE], int* msl, int* msr) {
       ds_value[7] = (double) wb_distance_sensor_get_value(ds[7]);
 
       for (i=0;i<NB_SENSOR;i++) {
-         left_speed += weights[i]*ds_value[i];
-         right_speed += weights[i+NB_SENSOR]*ds_value[i];
+         left_speed += e_puck_matrix[i]*ds_value[i];
+         right_speed += e_puck_matrix[i+NB_SENSOR]*ds_value[i];
       }
       left_speed /= MIN_SENS;
       right_speed /= MIN_SENS;
