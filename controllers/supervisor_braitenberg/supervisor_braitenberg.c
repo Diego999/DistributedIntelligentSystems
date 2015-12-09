@@ -47,16 +47,16 @@ int t;
 #define NB 1                            // Number of neighbors on each side
 #define LWEIGHT 2.0                     // Weight of attraction to personal best
 #define NBWEIGHT 2.0                    // Weight of attraction to neighborhood best
-#define VMAX 20.0                       // Maximum velocity particle can attain
-#define MININIT -20.0                   // Lower bound on initialization value
-#define MAXINIT 20.0                    // Upper bound on initialization value
-#define ITS 10                          // Number of iterations to run
+#define VMAX 5.0                       // Maximum velocity particle can attain
+#define MININIT -80.0                   // Lower bound on initialization value
+#define MAXINIT 80.0                    // Upper bound on initialization value
+#define ITS 30                          // Number of iterations to run
 #define MAX_ROB FLOCK_SIZE
 #define ROBOTS FLOCK_SIZE
 
 #define NB_SENSOR   8
-#define DATASIZE 2*NB_SENSOR+6          // Number of elements in particle
-#define SWARMSIZE 30                    // Number of particles in swarm
+#define DATASIZE 2*NB_SENSOR         // Number of elements in particle
+#define SWARMSIZE 10                    // Number of particles in swarm
 
 /* Neighborhood types */
 #define STANDARD    -1
@@ -384,10 +384,10 @@ int main(int argc, char *args[]) {
     endfit = 0.0;
     bestfit = 0.0;
     for (j=0;j<10;j++) {
-	    
+    
         /* Get result of evolution */
         weights = pso(SWARMSIZE,NB,LWEIGHT,NBWEIGHT,VMAX,MININIT,MAXINIT,ITS,DATASIZE,ROBOTS);
-        
+    
         /* Calculate performance */
         fit = 0.0;
         for (k=0;k<DATASIZE;k++)
@@ -440,7 +440,7 @@ void calc_fitness(double weights[DATASIZE], double* fit, int its, int numRobs) {
 	for (i=0;i<DATASIZE;i++) {
 	    buffer[i] = weights[i];
 	}
-	buffer[DATASIZE] = 10000;
+	
     for (i=0;i<ROBOTS;i++) {
         wb_emitter_send(emitter[i],(void *)buffer,(DATASIZE+1)*sizeof(double));
     }
