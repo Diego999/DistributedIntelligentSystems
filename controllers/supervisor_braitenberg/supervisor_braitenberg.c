@@ -47,7 +47,8 @@ int t;
 #define NB 1                            // Number of neighbors on each side
 #define LWEIGHT 2.0                     // Weight of attraction to personal best
 #define NBWEIGHT 2.0                    // Weight of attraction to neighborhood best
-#define VMAX 2.0                       // Maximum velocity particle can attain
+#define VMAX 10.0  
+// 0.6 of Inertia !                     // Maximum velocity particle can attain
 #define MININIT -5.0                   // Lower bound on initialization value
 #define MAXINIT 5.0                    // Upper bound on initialization value
 #define ITS 10                          // Number of iterations to run
