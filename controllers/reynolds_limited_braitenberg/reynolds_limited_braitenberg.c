@@ -107,11 +107,7 @@ static void reset()
    for(i=0; i<FLOCK_SIZE; i++) {
       initialized[i] = 0;       // Set initialization to 0 (= not yet initialized)
    }
-  
-    printf("Reset: robot %s\n",robot_number);
 }
-
-void braitenberg(double[],int*, int*);
 
 /*
  * Keep given int number within interval {-limit, limit}
@@ -363,126 +359,99 @@ void process_received_ping_messages(void)
    }
 }
 
-
 // the main function
 int main(){ 
-   int msl, msr;        // Wheel speeds
-   int bmsl, bmsr, sum_sensors;  // Braitenberg parameters
+   int msl, msr, bmsl, bmsr;        // Wheel speeds
+   int sum_sensors;  // Braitenberg parameters
    int i, j;            // Loop counter
-   int distances[NB_SENSORS]; // Array for the distance sensor readings
    int max_sens;        // Store highest sensor value
    double *rbuffer;
    double buffer[255];
+   int distances[NB_SENSORS]; // Array for the distance sensor readings
 
-   wb_robot_init();
-   reset();       // Resetting the robot
-   
-   for(i=0; i<FLOCK_SIZE; i++) {
-      timestamp[i] = 0;
-   }
-
-   msl = 0; msr = 0; 
-   max_sens = 0; 
-   
-   // Forever
-   for(;;){
-      // Wait for data
+   for(;;) {
+      reset();       // Resetting the robot
 
       while (wb_receiver_get_queue_length(receiver0) == 0) {
          wb_robot_step(64);
       }
-      //printf("received message from controller\n");
+      
       rbuffer = (double *)wb_receiver_get_data(receiver0);
-      //for(j = 0; j < DATASIZE; ++j)
-        //printf("%f ", rbuffer[j]);
-        //printf("\n");
-      for(j = 0; j < NB_STEPS; ++j) {
-          //msl = msr = 0;
-          bmsl = 0; bmsr = 0;
-          sum_sensors = 0;
-          max_sens = 0;
+
+      for(i=0; i<FLOCK_SIZE; i++) {
+         timestamp[i] = 0;
+      }
+
+      msl = 0; msr = 0; 
+      max_sens = 0; 
+      
+      // Forever
+      for(j = 0; j < NB_STEPS; ++j){
+         bmsl = 0; bmsr = 0;
+         sum_sensors = 0;
+         max_sens = 0;
+                   
+         /* Braitenberg */
          for(i=0;i<NB_SENSORS;i++) {
             distances[i]=wb_distance_sensor_get_value(ds[i]); //Read sensor values
             sum_sensors += distances[i]; // Add up sensor values
             max_sens = max_sens>distances[i]?max_sens:distances[i]; // Check if new highest sensor value
-         }
 
+            // Weighted sum of distance sensor values for Braitenburg vehicle
+            bmsr += rbuffer[i] * distances[i];
+            bmsl += rbuffer[i+NB_SENSORS] * distances[i];
+           }
+
+         // Adapt Braitenberg values (empirical tests)
+         bmsl/=MIN_SENS; bmsr/=MIN_SENS;
+         bmsl+=66; bmsr+=72;
+         
          /* Send and get information */
          timestamp[robot_id]++;
-         //printf("SEND PIN\n");
          send_ping_robot(robot_id); 
-          
+         
          process_received_ping_messages();
-
+         
          //printf("ROBOT %d: wheels %d, %d\n", robot_id, bmsl, bmsr);
-
+                  
          // Compute self position
          prev_my_position[0] = my_position[0];
          prev_my_position[1] = my_position[1];
-
+         
          update_self_motion(msl,msr);
-
+         
          speed[robot_id][0] = (1/DELTA_T)*(my_position[0]-prev_my_position[0]);
          speed[robot_id][1] = (1/DELTA_T)*(my_position[1]-prev_my_position[1]);
-
+         
          // Reynold's rules with all previous info (updates the speed[][] table)
          reynolds_rules();
-
+         
          //printf("ROBOT %d: wanted position: %f, %f\n", robot_id, speed[robot_id][0], speed[robot_id][1]);
-
+         
          // Compute wheels speed from reynold's speed
          compute_wheel_speeds(&msl, &msr);
-
+         
          //printf("wheels: %d, %d\n", msl, msr);
-
+         
          // Adapt speed instinct to distance sensor values
          if (sum_sensors > NB_SENSORS*MIN_SENS) {
-         msl -= msl*max_sens/(2*MAX_SENS);
-         msr -= msr*max_sens/(2*MAX_SENS);
+            msl -= msl*max_sens/(2*MAX_SENS);
+            msr -= msr*max_sens/(2*MAX_SENS);
          }
-         
-      braitenberg(rbuffer, &msl, &msr);
-
-               // Set speed
-      wb_differential_wheels_set_speed(msl,msr);
-    
-      // Continue one step
-      wb_robot_step(TIME_STEP);
+       
+         // Add Braitenberg
+         msl += bmsl;
+         msr += bmsr;
+                     
+         // Set speed
+         wb_differential_wheels_set_speed(msl,msr);
+       
+         // Continue one step
+         wb_robot_step(TIME_STEP);
       }
-      wb_emitter_send(emitter0,(void *)buffer,sizeof(double));
       
-      wb_receiver_next_packet(receiver);
-      
+      wb_emitter_send(emitter0,(void *)buffer,sizeof(double));   
+      wb_receiver_next_packet(receiver0);
    }
 }  
-
-void braitenberg(double weights[DATASIZE], int* msl, int* msr) {
-   double left_speed,right_speed; // Wheel speeds
-   double ds_value[NB_SENSOR];
-   int i;
-   left_speed = right_speed = 0;
-   
-      ds_value[0] = (double) wb_distance_sensor_get_value(ds[0]);
-      ds_value[1] = (double) wb_distance_sensor_get_value(ds[1]);
-      ds_value[2] = (double) wb_distance_sensor_get_value(ds[2]);
-      ds_value[3] = (double) wb_distance_sensor_get_value(ds[3]);
-      ds_value[4] = (double) wb_distance_sensor_get_value(ds[4]);
-      ds_value[5] = (double) wb_distance_sensor_get_value(ds[5]);
-      ds_value[6] = (double) wb_distance_sensor_get_value(ds[6]);
-      ds_value[7] = (double) wb_distance_sensor_get_value(ds[7]);
-
-      for (i=0;i<NB_SENSOR;i++) {
-         left_speed += weights[i]*ds_value[i];
-         right_speed += weights[i+NB_SENSOR]*ds_value[i];
-      }
-      left_speed /= MIN_SENS;
-      right_speed /= MIN_SENS;
-
-     
-      *msl += (int)left_speed;
-      *msr += (int)right_speed;
-      
-   limit(msl,MAX_SPEED);
-   limit(msr,MAX_SPEED);
-}
 

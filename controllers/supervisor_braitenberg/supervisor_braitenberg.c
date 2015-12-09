@@ -47,10 +47,10 @@ int t;
 #define NB 1                            // Number of neighbors on each side
 #define LWEIGHT 2.0                     // Weight of attraction to personal best
 #define NBWEIGHT 2.0                    // Weight of attraction to neighborhood best
-#define VMAX 5.0                       // Maximum velocity particle can attain
-#define MININIT -40.0                   // Lower bound on initialization value
-#define MAXINIT 40.0                    // Upper bound on initialization value
-#define ITS 30                          // Number of iterations to run
+#define VMAX 2.0                       // Maximum velocity particle can attain
+#define MININIT -5.0                   // Lower bound on initialization value
+#define MAXINIT 5.0                    // Upper bound on initialization value
+#define ITS 10                          // Number of iterations to run
 #define MAX_ROB FLOCK_SIZE
 #define ROBOTS FLOCK_SIZE
 
@@ -432,15 +432,17 @@ void calc_fitness(double weights[DATASIZE], double* fit, int its, int numRobs) {
     double* rbuffer;
     double local_perf = 0;
 
+    for(i = 0; i < DATASIZE; ++i)
+        printf("%.2f ", weights[i]);
+
     /* Send data to robots */
     for(i = 0; i < FLOCK_SIZE; ++i)
 	   	random_pos(i);
 
 	/* Send best controller to robots */
-	for (i=0;i<DATASIZE;i++) {
+	for (i=0;i<DATASIZE;i++)
 	    buffer[i] = weights[i];
-	}
-	
+
     for (i=0;i<ROBOTS;i++) {
         wb_emitter_send(emitter[i],(void *)buffer,(DATASIZE+1)*sizeof(double));
     }
@@ -473,6 +475,7 @@ void calc_fitness(double weights[DATASIZE], double* fit, int its, int numRobs) {
 	  }
 
     *fit = perf / nbMeasure;
+    printf("Fitness : %.4f\n", *fit);
 }
 
     // Evolution fitness function
