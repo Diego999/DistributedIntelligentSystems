@@ -15,7 +15,7 @@
 #define EVOLVE_AVG 1      // Average new fitness into total
 #define SELECT 2          // Find more accurate fitness for best selection
 
-int starting_weight[16] = {17,  30,  34,  0, 0,  -38, -55, -76, //left
+double starting_weight[16] = {17,  30,  34,  0, 0,  -38, -55, -76, //left
                           -72, -57, -36, 0, 0,   36,  29, 18}; //right
                           
 /* Size of swarm data must be global variables */
