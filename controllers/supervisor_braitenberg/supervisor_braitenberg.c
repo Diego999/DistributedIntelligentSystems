@@ -47,17 +47,17 @@ int t;
 #define NB 1                            // Number of neighbors on each side
 #define LWEIGHT 2.0                     // Weight of attraction to personal best
 #define NBWEIGHT 2.0                    // Weight of attraction to neighborhood best
-#define VMAX 0.1  
+#define VMAX 20.0 
 // 0.6 of Inertia !                     // Maximum velocity particle can attain
-#define MININIT -1.0                   // Lower bound on initialization value
-#define MAXINIT 1.0                    // Upper bound on initialization value
-#define ITS 24                          // Number of iterations to run
+#define MININIT -20.0                   // Lower bound on initialization value
+#define MAXINIT 20.0                    // Upper bound on initialization value
+#define ITS 10                          // Number of iterations to run
 #define MAX_ROB FLOCK_SIZE
 #define ROBOTS FLOCK_SIZE
 
 #define NB_SENSOR   8
-#define DATASIZE 2*NB_SENSOR         // Number of elements in particle
-#define SWARMSIZE 12                    // Number of particles in swarm
+#define DATASIZE 2*(NB_SENSOR+2+1)         // Number of elements in particle
+#define SWARMSIZE 10                    // Number of particles in swarm
 
 /* Neighborhood types */
 #define STANDARD    -1

@@ -14,20 +14,13 @@
 #define EVOLVE 0          // Find new fitness
 #define EVOLVE_AVG 1      // Average new fitness into total
 #define SELECT 2          // Find more accurate fitness for best selection
-
-double starting_weight[16] = {17,  30,  34,  0, 0,  -38, -55, -76, //left
-                          -72, -57, -36, 0, 0,   36,  29, 18}; //right
-                          
+                        
 /* Size of swarm data must be global variables */
 int swarmsize;
 int datasize;
 int robots;
 int nb;
 char label[20];
-
-int ignoreWeight(int j) {
-  return (j == 3 || j == 4 || j == 11 || j == 12); 
-}
 
 /* Particle swarm optimization function                                      */
 /*                                                                           */
@@ -79,9 +72,7 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
     // Initialize the swarm
     for (i = 0; i < swarmsize; i++) {
         for (j = 0; j < datasize; j++) {
-            swarm[i][j] = starting_weight[j];
-            if(ignoreWeight(j) == 0)
-              swarm[i][j] += (max-min)*rnd()+min;
+            swarm[i][j] = (max-min)*rnd()+min;
             lbest[i][j] = swarm[i][j];           // Best configurations are initially current configurations
             nbbest[i][j] = swarm[i][j];
             v[i][j] = 2.0*vmax*rnd()-vmax; 
@@ -109,8 +100,7 @@ double* pso(int n_swarmsize, int n_nb, double lweight, double nbweight, double v
     wb_supervisor_set_label(0,label,0.01,0.01,0.1,0xffffff,0);
     // Update preferences and generate new particles
     for (i = 0; i < swarmsize; i++)
-        for (j = 0; j < datasize; j++)
-            if(ignoreWeight(j) == 0) {
+        for (j = 0; j < datasize; j++) {
               v[i][j] += lweight*rnd()*(lbest[i][j] - swarm[i][j]) + nbweight*rnd()*(nbbest[i][j] - swarm[i][j]);
               v[i][j] *= 0.6;
               swarm[i][j] += v[i][j];

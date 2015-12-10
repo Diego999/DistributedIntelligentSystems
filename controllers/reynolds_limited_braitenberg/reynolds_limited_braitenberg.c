@@ -19,7 +19,7 @@
 #define TIME_STEP       64   // [ms] Length of time step
 #define MAX_ACC 800.0 // Maximum amount speed can change in 128 ms
 #define NB_SENSOR 8 // Number of proximity sensors
-#define DATASIZE 2*NB_SENSOR // Number of elements in particle
+#define DATASIZE 2*(NB_SENSOR+2+1) // Number of elements in particle
 
 // Fitness definitions
 #define MAX_DIFF (2*MAX_SPEED) // Maximum difference between wheel speeds
@@ -366,6 +366,16 @@ void process_received_ping_messages(void)
    }
 }
 
+// S-function to transform v variable to [0,1]
+double s(double v) {
+    if (v > 5)
+        return 1.0;
+    else if (v < -5)
+        return 0.0;
+    else
+        return 1.0/(1.0 + exp(-1*v));
+}
+
 // the main function
 int main(){ 
    int msl, msr, bmsl, bmsr;        // Wheel speeds
@@ -375,6 +385,8 @@ int main(){
    double *rbuffer;
    double buffer[255];
    int distances[NB_SENSORS]; // Array for the distance sensor readings
+   double old_left, old_right;
+   int left_encoder,right_encoder;
 
    for(;;) {
       reset();       // Resetting the robot
@@ -391,7 +403,9 @@ int main(){
 
       msl = 0; msr = 0; 
       max_sens = 0; 
-      
+      old_left = 0.0;
+      old_right = 0.0;
+
       // Forever
       for(j = 0; j < NB_STEPS; ++j){
          bmsl = 0; bmsr = 0;
@@ -406,21 +420,53 @@ int main(){
 
             // Weighted sum of distance sensor values for Braitenburg vehicle
             bmsr += rbuffer[i] * distances[i];
-            bmsl += rbuffer[i+NB_SENSORS] * distances[i];
+            bmsl += rbuffer[i+NB_SENSORS+1] * distances[i];
            }
 
          // Adapt Braitenberg values (empirical tests)
          bmsl/=MIN_SENS; bmsr/=MIN_SENS;
-         bmsl+=66; bmsr+=72;
+
+         // Add the recursive connections
+         bmsl += rbuffer[2*NB_SENSOR+2]*(old_left+MAX_SPEED)/(2*MAX_SPEED);
+         bmsl += rbuffer[2*NB_SENSOR+3]*(old_right+MAX_SPEED)/(2*MAX_SPEED);
+         bmsr += rbuffer[2*NB_SENSOR+4]*(old_left+MAX_SPEED)/(2*MAX_SPEED);
+         bmsr += rbuffer[2*NB_SENSOR+5]*(old_right+MAX_SPEED)/(2*MAX_SPEED);
+
+         // Add neural thresholds
+         bmsl += rbuffer[NB_SENSOR];
+         bmsr += rbuffer[2*NB_SENSOR+1];
          
+         // Apply neuron transform 
+         bmsl = MAX_SPEED*(2.0*s(bmsl)-1.0);
+         bmsr = MAX_SPEED*(2.0*s(bmsr)-1.0);
+
+         // Make sure we don't accelerate too fast
+         if (bmsl - old_left > MAX_ACC) bmsl = old_left+MAX_ACC;
+         if (bmsl - old_left < -MAX_ACC) bmsl = old_left-MAX_ACC;
+         if (bmsr - old_right > MAX_ACC) bmsr = old_right+MAX_ACC;
+         if (bmsr - old_right < -MAX_ACC) bmsr = old_right-MAX_ACC;
+
+         // Make sure speeds are within bounds
+         if (bmsl > MAX_SPEED) bmsl = MAX_SPEED;
+         if (bmsl < -1.0*MAX_SPEED) bmsl = -1.0*MAX_SPEED;
+         if (bmsr > MAX_SPEED) bmsr = MAX_SPEED;
+         if (bmsr < -1.0*MAX_SPEED) bmsr = -1.0*MAX_SPEED;
+
+         // Set new old speeds
+         old_left = bmsl;
+         old_right = bmsr;
+         
+         left_encoder = wb_differential_wheels_get_left_encoder();
+         right_encoder = wb_differential_wheels_get_right_encoder();
+         if (left_encoder>9000) wb_differential_wheels_set_encoders(0,right_encoder);
+         if (right_encoder>1000) wb_differential_wheels_set_encoders(left_encoder,0);
+
          /* Send and get information */
          timestamp[robot_id]++;
          send_ping_robot(robot_id); 
          
          process_received_ping_messages();
-         
-         //printf("ROBOT %d: wheels %d, %d\n", robot_id, bmsl, bmsr);
-                  
+                
          // Compute self position
          prev_my_position[0] = my_position[0];
          prev_my_position[1] = my_position[1];
@@ -433,12 +479,8 @@ int main(){
          // Reynold's rules with all previous info (updates the speed[][] table)
          reynolds_rules();
          
-         //printf("ROBOT %d: speed: %f, %f\n", robot_id, speed[robot_id][0], speed[robot_id][1]);
-         
          // Compute wheels speed from reynold's speed
          compute_wheel_speeds(&msl, &msr);
-         
-         //printf("wheels: %d, %d\n", msl, msr);
          
          // Adapt speed instinct to distance sensor values
          if (sum_sensors > NB_SENSORS*MIN_SENS) {
