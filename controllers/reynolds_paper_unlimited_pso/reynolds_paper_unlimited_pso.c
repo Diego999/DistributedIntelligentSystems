@@ -44,15 +44,15 @@ double COEF_T;    // Threshold
 /*
  * Bound parameters
  */
-float COEF_B_L =  0.00;
+float COEF_B_L =  1.00;
 float COEF_B_U = 20.00;
-float COEF_S_L =  0.00;
+float COEF_S_L =  1.00;
 float COEF_S_U = 20.00;
 float COEF_R_L =  0.01;
 float COEF_R_U =  1.50; 
 float COEF_K_L =  0.50;
 float COEF_K_U =  1.50;
-float COEF_T_L =  0.00;
+float COEF_T_L =  0.05;
 float COEF_T_U =  0.50; 
 
 #define NB_STEPS	5000
