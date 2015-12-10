@@ -37,8 +37,8 @@ float sensor_degrees[] = {-18.435, -48.652, -90.000, -116.565, +116.565, +90.000
 #define COEF_KP 1.0    // proportional gain for the angular velocity controller
 #define COEF_B  8.0    // gain on the virtual force
 #define COEF_R  1.0    // gain on the migration urge
-#define COEF_S  20.0    // gain on the cohesion
-#define COEF_T  0.4    // Threshold
+#define COEF_S  5.0    // gain on the cohesion
+#define COEF_T  0.1    // Threshold
 #define DISPLAY 1       // Display on/off for e-puck state values while controled
 
 
