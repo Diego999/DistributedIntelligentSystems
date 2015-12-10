@@ -155,29 +155,45 @@ void findPerformance(double swarm[swarmsize][datasize], double perf[swarmsize],
              int neighbors[swarmsize][swarmsize]) {
     double particles[datasize];
     double fit;
-    int i,k;                   // FOR-loop counters
+    int i,j,k;                   // FOR-loop counters
 
     for (i = 0; i < swarmsize; ++i) {
+        perf[i] = 0;
       printf("Particule %d : ", i);
-        for (k=0;k<datasize;k++)
+        for (k=0;k<datasize;k++) {
             particles[k] = swarm[i][k];
-
+            printf("%.2f ", particles[k]);
+        }
+        printf("\nEvaluation : ");
         if (type == EVOLVE_AVG) {
             // Evalute current fitness
-            fitness(particles,&fit,neighbors);
+            for(j = 0; j < FINALRUNS; ++j) {
+                fit = 0;
+                fitness(particles,&fit,neighbors);
+                printf("%d (%.4f) ", j, fit);
+            }
+            fit /= FINALRUNS;
             perf[i] = (perf[i]*(age[i]-1)+fit)/age[i];
             age[i]++;
         } else if (type == EVOLVE) {
-        	fitness(particles,&fit,neighbors);
-            perf[i] = fit;
+            for(j = 0; j < FINALRUNS; ++j) {
+                fit = 0;
+        	    fitness(particles,&fit,neighbors);
+                printf("%d (%.4f) ", j, fit);
+                perf[i] += fit;
+            }
+            perf[i] /= FINALRUNS;
         } else if (type == SELECT) {
             perf[i] = 0.0;
             for (k=0;k<5;k++) {
                 fitness(particles,&fit,neighbors);
                 perf[i] += fit;
+                printf("%d (%.4f) ", k, fit);
             }
             perf[i] /= 5.0;
         }
+
+        printf(" -> %.4f\n", perf[i]);
     }
 }
 
