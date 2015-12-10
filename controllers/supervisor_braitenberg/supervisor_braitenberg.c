@@ -47,11 +47,12 @@ int t;
 #define NB 1                            // Number of neighbors on each side
 #define LWEIGHT 2.0                     // Weight of attraction to personal best
 #define NBWEIGHT 2.0                    // Weight of attraction to neighborhood best
-#define VMAX 1.0  
+
+#define VMAX 0.5  
 // 0.6 of Inertia !                     // Maximum velocity particle can attain
-#define MININIT -1.0                   // Lower bound on initialization value
-#define MAXINIT 1.0                    // Upper bound on initialization value
-#define ITS 10                          // Number of iterations to run
+#define MININIT -1                   // Lower bound on initialization value
+#define MAXINIT 1                    // Upper bound on initialization value
+#define ITS 24                          // Number of iterations to run
 #define MAX_ROB FLOCK_SIZE
 #define ROBOTS FLOCK_SIZE
 
