@@ -1,3 +1,5 @@
+
+
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -31,16 +33,32 @@
 #define MAX_SPEED       800      // Maximum speed in tics
 float sensor_degrees[] = {-18.435, -48.652, -90.000, -116.565, +116.565, +90.000, +48.652, +18.435}; // position in degrees for sensor position
 
-/*
- * CONTROL PARAMETERS
+/* CONTROL PARAMETERS
+PSO parameters
+1.0 0.38 0.33 0.69 0.34
+0.94 0.38 0.29 0.87 0.36
+0.39 0.00 0.40 0.53 0.44
  */
-#define COEF_KP 1.0    // proportional gain for the angular velocity controller
-#define COEF_B  8.0    // gain on the virtual force
-#define COEF_R  1.0    // gain on the migration urge
-#define COEF_S  5.0    // gain on the cohesion
-#define COEF_T  0.1    // Threshold
-#define DISPLAY 1       // Display on/off for e-puck state values while controled
+#define COEF_KP 0.8    // proportional gain for the angular velocity controller
+#define COEF_B  0.4    // gain on the virtual force
+#define COEF_S  0.6    // gain on the cohesion
+#define COEF_R  0.5    // gain on the migration urge 
+#define COEF_T  0.2    // Threshold
+#define DISPLAY 1      // Display on/off for e-puck state values while controled
 
+/*
+ * Bound parameters
+ */
+float COEF_B_L =  1.00;
+float COEF_B_U = 20.00;
+float COEF_S_L =  1.00;
+float COEF_S_U = 20.00;
+float COEF_R_L =  0.01;
+float COEF_R_U =  1.50; 
+float COEF_K_L =  0.50;
+float COEF_K_U =  1.50;
+float COEF_T_L =  0.05;
+float COEF_T_U =  0.50; 
 
 /*
  * MIGRATION URGE 
@@ -184,6 +202,12 @@ void flocking_behavior(int *msl, int *msr)
 	float aloc = 0.0; // buffer variable for the robots relative anlge
 	float dloc = 0.0; // buffer variable for the robots relative distance
 
+	float coef_k = COEF_KP *(COEF_K_U - COEF_K_L) + COEF_K_L; // De-normalization of coef_k
+	float coef_b = COEF_B  *(COEF_B_U - COEF_B_L) + COEF_B_L; // De-normalization of coef_b
+	float coef_s = COEF_S  *(COEF_S_U - COEF_S_L) + COEF_S_L; // De-normalization of coef_s
+	float coef_r = COEF_R  *(COEF_R_U - COEF_R_L) + COEF_R_L; // De-normalization of coef_r
+	float coef_t = COEF_T  *(COEF_T_U - COEF_T_L) + COEF_T_L; // De-normalization of coef_t
+
 	/* 
 	 * HEADING VECTOR
 	 */ 
@@ -221,8 +245,8 @@ void flocking_behavior(int *msl, int *msr)
 		{
 			if ( xloc >= 0.0) aloc = +atanf(zloc/xloc) * 180/M_PI;
 			if ( xloc <  0.0) aloc = +atanf(zloc/xloc) * 180/M_PI + 180;
-			if ( dloc >= COEF_T)  fk = +(dloc - COEF_T)*(dloc - COEF_T);
-			if ( dloc <  COEF_T)  fk = -(dloc - COEF_T)*(dloc - COEF_T); 
+			if ( dloc >= coef_t)  fk = +(dloc - coef_t)*(dloc - coef_t);
+			if ( dloc <  coef_t)  fk = -(dloc - coef_t)*(dloc - coef_t); 
 			s[0] += cosf(aloc * M_PI/180) * fk;
 			s[1] += sinf(aloc * M_PI/180) * fk;
 		}		
@@ -236,8 +260,8 @@ void flocking_behavior(int *msl, int *msr)
 	/*
 	 * HEADING VECTOR (desired = a, current = b)
 	 */
-	a[0] = h[0] + COEF_B * p[0] + COEF_R * r[0] + COEF_S* s[0];
-	a[1] = h[1] + COEF_B * p[1] + COEF_R * r[1] + COEF_S* s[1];
+	a[0] = h[0] + coef_b * p[0] + coef_r * r[0] + coef_s * s[0];
+	a[1] = h[1] + coef_b * p[1] + coef_r * r[1] + coef_s * s[1];	 
 	norm = sqrtf(a[0]*a[0] + a[1]*a[1]);
 	a[0] /= norm;
 	a[1] /= norm;
@@ -252,12 +276,12 @@ void flocking_behavior(int *msl, int *msr)
 	float dphase  = phase_b - phase_a;
 
 	u = (a[0]*b[0] + a[1]*b[1]) * MAX_SPEED_MS;
-	w = dphase * COEF_KP ;
+	w = dphase * coef_k;
 	if (u < 0.0){
 		u = 0.0;
 		if (phase_a >  0) dphase = phase_b - (phase_a - M_PI);
 		if (phase_a <= 0) dphase = phase_b - (phase_a + M_PI);
-		w = dphase * COEF_KP;
+		w = dphase * coef_k;
 	}
 
 	/*
