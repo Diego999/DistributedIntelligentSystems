@@ -35,7 +35,7 @@
 #define MIGRATION_WEIGHT  0.01   // Wheight of attraction towards the common goal. default 0.01
 
 //weigths for the braientberg
-int braiten_weight[16] = {17.54, 29.64, 33.97, 0.00, 0.00, -37.92, -54.34, -76.52, -72.05, -56.29, -35.57, 0.00, 0.00, 36.40, 28.88, 18.15 }; //right
+double braiten_weight[16] = {17.54, 29.64, 33.97, 0.00, 0.00, -37.92, -54.34, -76.52, -72.05, -56.29, -35.57, 0.00, 0.00, 36.40, 28.88, 18.15 }; //right
 
 WbDeviceTag ds[NB_SENSORS];   // Handle for the infrared distance sensors
 WbDeviceTag receiver;     // Handle for the receiver node
