@@ -31,7 +31,7 @@ float loc_old[FLOCK_SIZE][3];
 #define H_MAX                   5.00
 //weights for the performance calculation
 #define W_O    0.5   //orientation
-#define W_C    0.0   //cohesion
+#define W_C    0.0   //cohesion (not used)
 #define W_V    1.0   //velocity
 #define W_S    5.0   //entropy
 
@@ -358,7 +358,7 @@ float instant_perf(){
    compute_fitness_S(& fit_S);
 
    //printf("Result %f * %f * %f * %f = %f\n", W_O*fit_O , W_C*fit_C , W_V*fit_V , W_S*fit_S, W_O*fit_O * W_C*fit_C * W_V*fit_V * W_S*fit_S);
-   return (W_O*fit_O + W_C*fit_C + W_V*fit_V + W_S*fit_S)/ (W_O + W_C + W_V + W_S);
+   return (W_O*fit_O * W_V*fit_V * W_S*fit_S)/ (W_O * W_V * W_S);
 }
 
 /*
