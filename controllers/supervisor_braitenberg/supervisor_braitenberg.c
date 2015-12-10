@@ -30,10 +30,10 @@ float loc_old[FLOCK_SIZE][3];
 #define DH                      0.01
 #define H_MAX                   5.00
 //weights for the performance calculation
-#define W_O    1.0   //orientation
-#define W_C    1.0   //cohesion
+#define W_O    0.5   //orientation
+#define W_C    0.0   //cohesion
 #define W_V    1.0   //velocity
-#define W_S    1.0   //entropy
+#define W_S    5.0   //entropy
 
 int clusters[NB_MAX_CLUSTER][SIZE_MAX_CLUSTER]; //+1 because we want to add END_CLUSTER_IDX
 float dist_robot[FLOCK_SIZE][FLOCK_SIZE];
@@ -47,17 +47,17 @@ int t;
 #define NB 1                            // Number of neighbors on each side
 #define LWEIGHT 2.0                     // Weight of attraction to personal best
 #define NBWEIGHT 2.0                    // Weight of attraction to neighborhood best
-#define VMAX 10.0  
+#define VMAX 0.1  
 // 0.6 of Inertia !                     // Maximum velocity particle can attain
-#define MININIT -5.0                   // Lower bound on initialization value
-#define MAXINIT 5.0                    // Upper bound on initialization value
-#define ITS 10                          // Number of iterations to run
+#define MININIT -1.0                   // Lower bound on initialization value
+#define MAXINIT 1.0                    // Upper bound on initialization value
+#define ITS 24                          // Number of iterations to run
 #define MAX_ROB FLOCK_SIZE
 #define ROBOTS FLOCK_SIZE
 
 #define NB_SENSOR   8
 #define DATASIZE 2*NB_SENSOR         // Number of elements in particle
-#define SWARMSIZE 10                    // Number of particles in swarm
+#define SWARMSIZE 12                    // Number of particles in swarm
 
 /* Neighborhood types */
 #define STANDARD    -1
@@ -358,7 +358,7 @@ float instant_perf(){
    compute_fitness_S(& fit_S);
 
    //printf("Result %f * %f * %f * %f = %f\n", W_O*fit_O , W_C*fit_C , W_V*fit_V , W_S*fit_S, W_O*fit_O * W_C*fit_C * W_V*fit_V * W_S*fit_S);
-   return W_O*fit_O * W_C*fit_C * W_V*fit_V * W_S*fit_S;
+   return (W_O*fit_O + W_C*fit_C + W_V*fit_V + W_S*fit_S)/ (W_O + W_C + W_V + W_S);
 }
 
 /*
@@ -448,7 +448,6 @@ void calc_fitness(double weights[DATASIZE], double* fit, int its, int numRobs) {
         wb_emitter_send(emitter[i],(void *)buffer,(DATASIZE+1)*sizeof(double));
     }
 
-
 	  /* Wait for response */
 	  while (wb_receiver_get_queue_length(rec[0]) == 0) {
 	  	for (i=0;i<FLOCK_SIZE;i++) {
@@ -465,12 +464,14 @@ void calc_fitness(double weights[DATASIZE], double* fit, int its, int numRobs) {
 	    if(local_perf > 0) {
 		  	perf += local_perf;
 		  	++nbMeasure;
+            //printf("%f\n", local_perf);
 		  }
 	    wb_robot_step(64);
 	}
 
 	  /* Get fitness values */
 	  for (i=0;i<FLOCK_SIZE;i++) {
+
 	    rbuffer = (double *)wb_receiver_get_data(rec[i]);
 	    wb_receiver_next_packet(rec[i]);
 	  }

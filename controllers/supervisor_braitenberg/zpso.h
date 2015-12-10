@@ -1,6 +1,6 @@
 #define NB_SENSOR   8
 #define DATASIZE 2*NB_SENSOR          // Number of elements in particle
-#define SWARMSIZE 10                    // Number of particles in swarm
+#define SWARMSIZE 12                    // Number of particles in swarm
 
 // Functions
 double* pso(int,int,double,double,double,double,double,int,int,int); // Run particle swarm optimization

@@ -81,6 +81,9 @@ static void reset()
    
    for(i=0; i<FLOCK_SIZE; i++) {
       timestamp[i] = 0;
+      relative_pos[i][0] = 0;
+      relative_pos[i][1] = 0;
+      relative_pos[i][2] = 0;
    }
    maxTimestamp = 1;
    
@@ -89,6 +92,10 @@ static void reset()
    for(i=0;i<NB_SENSORS;i++)
       wb_distance_sensor_enable(ds[i],64);
 
+   my_position[0] = 0;
+   my_position[1] = 0;
+   my_position[2] = 0;
+   //printf("reset: my pos: %f, %f\n", my_position[0], my_position[1]);
  
    wb_differential_wheels_enable_encoders(64);
    //Reading the robot's name. Pay attention to name specification when adding robots to the simulation!
@@ -426,7 +433,7 @@ int main(){
          // Reynold's rules with all previous info (updates the speed[][] table)
          reynolds_rules();
          
-         //printf("ROBOT %d: wanted position: %f, %f\n", robot_id, speed[robot_id][0], speed[robot_id][1]);
+         //printf("ROBOT %d: speed: %f, %f\n", robot_id, speed[robot_id][0], speed[robot_id][1]);
          
          // Compute wheels speed from reynold's speed
          compute_wheel_speeds(&msl, &msr);
