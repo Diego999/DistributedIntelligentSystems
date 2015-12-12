@@ -1850,7 +1850,7 @@ DEF epuck0 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_paper_unlimited"
+  controller "reynolds_paper_unlimited_flock_col"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -3467,7 +3467,7 @@ DEF epuck1 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_paper_unlimited"
+  controller "reynolds_paper_unlimited_flock_col"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -5084,7 +5084,7 @@ DEF epuck2 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_paper_unlimited"
+  controller "reynolds_paper_unlimited_flock_col"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -6701,7 +6701,7 @@ DEF epuck3 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_paper_unlimited"
+  controller "reynolds_paper_unlimited_flock_col"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -8336,7 +8336,7 @@ DEF epuck4 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_paper_unlimited"
+  controller "reynolds_paper_unlimited_flock_col"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -9959,7 +9959,7 @@ DEF epuck5 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_paper_unlimited"
+  controller "reynolds_paper_unlimited_flock_col"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -11582,7 +11582,7 @@ DEF epuck6 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_paper_unlimited"
+  controller "reynolds_paper_unlimited_flock_col"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -13205,7 +13205,7 @@ DEF epuck7 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_paper_unlimited"
+  controller "reynolds_paper_unlimited_flock_col"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -14828,7 +14828,7 @@ DEF epuck8 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_paper_unlimited"
+  controller "reynolds_paper_unlimited_flock_col"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
@@ -16463,7 +16463,7 @@ DEF epuck9 DifferentialWheels {
       }
     ]
   }
-  controller "reynolds_paper_unlimited"
+  controller "reynolds_paper_unlimited_flock_col"
   axleLength 0.052
   wheelRadius 0.0205
   maxSpeed 6.28
