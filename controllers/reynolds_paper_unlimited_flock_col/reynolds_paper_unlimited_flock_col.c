@@ -115,22 +115,24 @@ static void reset()
 	
 	//Reading the robot's name. Pay attention to name specification when adding robots to the simulation!
 	sscanf(robot_name,"epuck%d",&robot_id_u); // read robot id from the robot's name
-	robot_id = robot_id_u%FLOCK_SIZE;	  // normalize between 0 and FLOCK_SIZE-1
-  	sprintf(robot_name,"epuck%d", robot_id);
-
-
-	for(i=0; i<FLOCK_SIZE; i++) {
-		initialized[i] = 0;		  // Set initialization to 0 (= not yet initialized)
-	}
-  	
-  	if(robot_id < 5){
-  		migr[0] = 100;
+	
+	if(robot_id_u < 5){
+  		migr[0] = -100;
   		migr[1] = 00;
   	}
   	else{
   		migr[0] = 100;
   		migr[1] = 00;
   	}
+	
+	robot_id = robot_id_u%FLOCK_SIZE;	  // normalize between 0 and FLOCK_SIZE-1
+  	sprintf(robot_name,"epuck%d", robot_id);
+           
+	for(i=0; i<FLOCK_SIZE; i++) {
+		initialized[i] = 0;		  // Set initialization to 0 (= not yet initialized)
+	}
+  	
+  	
           	
   
     printf("Reset: robot %d\n",robot_id_u);
